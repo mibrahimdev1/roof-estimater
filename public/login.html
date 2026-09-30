@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="Roof Estimator">
+    <meta name="description" content="Roof Estimator is a tool that helps you estimate the cost of roofing materials.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in — Roof Estimator</title>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body class="centered">
+
+<div class="page-stack">
+    <div class="head-container">
+        <header class="page-header">
+            <div class="brand">
+                <span class="brand-mark"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+                <h2>Sign in</h2>
+            </div>
+            <nav class="top-nav" aria-label="Main">
+                <a class="nav-link" href="/"><i class="fa-solid fa-calculator" aria-hidden="true"></i>Estimator</a>
+                <a class="nav-link" href="/guide.html"><i class="fa-regular fa-file-lines" aria-hidden="true"></i>Technical guide</a>
+                <a id="navDashboard" class="nav-link" href="/dashboard.html" hidden><i class="fa-solid fa-gauge" aria-hidden="true"></i>Dashboard</a>
+                <a id="navSignIn" class="nav-link" href="/login.html" aria-current="page" hidden><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>Sign in</a>
+            </nav>
+        </header>
+    </div>
+
+    <div class="container">
+    <div id="errorBanner" class="error-banner" role="alert"></div>
+
+    <div class="login-card">
+        <form id="loginForm">
+            <label>Email</label>
+            <input id="email" type="email" autocomplete="username" required placeholder="admin@roof.local" />
+
+            <label>Password</label>
+            <input id="password" type="password" autocomplete="current-password" required />
+
+            <div class="buttons" style="margin-top: 18px;">
+                <button type="submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>Sign in</button>
+            </div>
+        </form>
+        <p class="hint" style="margin-top: 16px;">
+            Default credentials are set on first run (see <code>.env.example</code>). Change the password after first login under Dashboard → Profile.
+        </p>
+    </div>
+    </div>
+</div>
+
+<script src="/js/toast.js"></script>
+<script>
+    function showErr(msg) {
+        errorBanner.textContent = msg;
+        errorBanner.classList.add("visible");
+        if (typeof window.showToast === "function") {
+            window.showToast("error", msg || "Sign in failed.");
+        }
+    }
+    function clearErr() {
+        errorBanner.classList.remove("visible");
+        errorBanner.textContent = "";
+    }
+
+    (async function boot() {
+        const r = await fetch("/api/auth/me", { credentials: "include" });
+        const j = await r.json();
+        if (j.success && j.user) {
+            window.location.href = "/dashboard.html";
+        }
+    })();
+
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearErr();
+        const res = await fetch("/api/auth/login", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email: email.value.trim(),
+                password: password.value
+            })
+        });
+        const j = await res.json();
+        if (!res.ok || !j.success) {
+            showErr(j.error?.message || "Sign in failed.");
+            return;
+        }
+        if (typeof window.showToast === "function") {
+            window.showToast("success", "Signed in.");
+        }
+        window.setTimeout(() => {
+            window.location.href = "/dashboard.html";
+        }, 500);
+    });
+</script>
+<script src="/js/nav-auth.js" defer></script>
+</body>
+</html>

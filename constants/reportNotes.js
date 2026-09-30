@@ -1,0 +1,3 @@
+/** Exact client wording for material-estimate reports (PDF / Word / Excel). */
+export const MATERIAL_ESTIMATE_DISCLAIMER =
+    "Material quantities and waste factors shown in this report are estimates only and may vary based on field conditions, roof complexity, installation methods, and manufacturer requirements. Additional materials may be required for starter rows, ridges, hips, valleys, flashing, cuts, and job-site conditions. Prices and quantities should be verified prior to ordering. This report is intended as a material takeoff aid and does not replace field measurements or professional judgment.";

@@ -1,0 +1,3314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="Roof Estimator">
+    <meta name="description" content="Roof Estimator is a tool that helps you estimate the cost of roofing materials.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Roof Estimator</title>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body class="centered">
+
+<div class="page-stack">
+    <div class="head-container">
+        <header class="page-header">
+            <div class="brand">
+                <span class="brand-mark"><i class="fa-solid fa-gauge" aria-hidden="true"></i></span>
+                <h4 id="dashboardTitle">Dashboard</h4>
+            </div>
+            <nav class="top-nav" aria-label="Main">
+                <a class="nav-link" href="/"><i class="fa-solid fa-calculator" aria-hidden="true"></i>Estimator</a>
+                <a class="nav-link" href="/guide.html"><i class="fa-regular fa-file-lines" aria-hidden="true"></i>Technical guide</a>
+                <a id="navDashboard" class="nav-link" href="/dashboard.html" aria-current="page" hidden><i class="fa-solid fa-gauge" aria-hidden="true"></i>Dashboard</a>
+                <a id="navSignIn" class="nav-link" href="/login.html" hidden><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>Sign in</a>
+                <button type="button" class="nav-link" id="btnLogout" style="cursor:pointer;border:none;font:inherit;padding:12px 12px;" hidden aria-label="Sign out">
+                    <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span class="sr-only">Sign out</span>
+                </button>
+            </nav>
+        </header>
+    </div>
+
+    <div class="container">
+    <div id="errorBanner" class="error-banner" role="alert"></div>
+
+    <div class="dash-tabs" role="tablist">
+        <button type="button" class="dash-tab-btn active" data-tab="stats" role="tab" aria-selected="true"><i class="fa-solid fa-chart-line" aria-hidden="true"></i>Dashboard</button>
+        <button type="button" class="dash-tab-btn" data-tab="profile" role="tab"><i class="fa-solid fa-user" aria-hidden="true"></i>Profile</button>
+        <button type="button" class="dash-tab-btn" data-tab="history" role="tab"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>History</button>
+        <button type="button" class="dash-tab-btn" data-tab="manufacturers" role="tab"><i class="fa-solid fa-industry" aria-hidden="true"></i>Manufacturers</button>
+        <button type="button" class="dash-tab-btn" data-tab="products" role="tab"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>Products</button>
+        <button type="button" class="dash-tab-btn" data-tab="settings" role="tab"><i class="fa-solid fa-gear" aria-hidden="true"></i>Settings</button>
+    </div>
+
+    <div id="panel-stats" class="dash-tab-panel active" role="tabpanel">
+        <p class="hint">Overview of saved estimates (each successful calculation from the Estimator).</p>
+        <div class="stat-grid" id="statGrid"></div>
+        <h3 class="stats-latest-title">Recent calculations</h3>
+        <div class="table-wrap">
+            <table class="history-table stats-latest-table" id="statsLatestTable">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>User name</th>
+                        <th>Area</th>
+                        <th>Pitch</th>
+                        <th>Surface</th>
+                        <th>Waste</th>
+                        <th>Total</th>
+                        <!-- <th class="history-th-copy" aria-label="Copy">
+                            <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                        </th> -->
+                    </tr>
+                </thead>
+                <tbody id="statsLatestBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="panel-profile" class="dash-tab-panel" role="tabpanel">
+        <p class="hint">Account details and password.</p>
+        <div class="profile-grid">
+            <div id="profileInfo" class="column profile-card"></div>
+            <div class="column profile-card">
+                <h3 class="profile-password-heading">Change password</h3>
+                <form id="pwdForm" class="profile-password-form">
+                    <label>Current password</label>
+                    <input id="curPwd" type="password" autocomplete="current-password" required />
+                    <label>New password (min 8 characters)</label>
+                    <input id="newPwd" type="password" autocomplete="new-password" required minlength="8" />
+                    <div class="buttons"><button type="submit"><i class="fa-solid fa-key" aria-hidden="true"></i>Update password</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-history" class="dash-tab-panel" role="tabpanel">
+        <p class="hint">Click a row to view full inputs and results.</p>
+        <div class="filters-panel">
+            <div class="history-toolbar">
+                <div class="history-filters" role="search" aria-label="Filter by date">
+                    <div class="history-filter-field">
+                        <label for="historyDateFrom">From</label>
+                        <input type="date" id="historyDateFrom" class="history-date-input" />
+                    </div>
+                    <div class="history-filter-field">
+                        <label for="historyDateTo">To</label>
+                        <input type="date" id="historyDateTo" class="history-date-input" />
+                    </div>
+                    <button type="button" class="tertiary history-filter-apply" id="btnApplyHistoryFilter"><i class="fa-solid fa-filter" aria-hidden="true"></i>Apply</button>
+                </div>
+                <button type="button" class="tertiary btn-history-refresh" id="btnRefreshHistory"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>Refresh</button>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="history-table" id="historyTable">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>User name</th>
+                        <th>Area</th>
+                        <th>Pitch</th>
+                        <th>Surface</th>
+                        <th>Waste</th>
+                        <th>Total</th>
+                        <!-- <th class="history-th-copy" aria-label="Copy">
+                            <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                        </th> -->
+                    </tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="historyPagination"></div>
+    </div>
+
+    <div id="panel-settings" class="dash-tab-panel" role="tabpanel">
+        <p class="hint">Default margin and unit prices apply to the public Estimator, JSON results, and exports.</p>
+        <div class="settings-cards-stack">
+            <form id="settingsMarginForm" class="column settings-form-card">
+                <h3>Default pricing margin</h3>
+                <div class="settings-fields-grid">
+                    <div class="settings-field settings-field-full">
+                        <label>Default pricing margin (%)</label>
+                        <input id="setMargin" type="number" min="0" max="100" step="0.5" required />
+                    </div>
+                </div>
+                <div class="settings-form-actions">
+                    <div class="page-form-actions">
+                        <button type="submit" id="btnSaveMargin" class="btn-sm" disabled><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>Save margin</button>
+                    </div>
+                </div>
+            </form>
+
+            <form id="settingsPricesForm" class="column settings-form-card">
+                <h3>Material unit prices (USD)</h3>
+                <div id="priceFields" class="settings-price-grid"></div>
+                <div class="settings-form-actions">
+                    <div class="page-form-actions">
+                        <button type="submit" id="btnSavePrices" class="btn-sm" disabled><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>Save prices</button>
+                    </div>
+                </div>
+            </form>
+
+            <form id="settingsGeometryForm" class="column settings-form-card">
+                <h3>Customer locked geometry profile</h3>
+                <div class="settings-geometry-grid">
+                    <div class="settings-field"><label>Total area (sq ft)</label><input id="setCustArea" type="number" min="1" step="1" /></div>
+                    <div class="settings-field"><label>Pitched area (sq ft)</label><input id="setCustPitchedArea" type="number" min="0" step="1" /></div>
+                    <div class="settings-field"><label>Flat area (sq ft)</label><input id="setCustFlatArea" type="number" min="0" step="1" /></div>
+                    <div class="settings-field"><label>Pitch (rise/12)</label><input id="setCustPitch" type="number" min="0" max="24" step="0.1" /></div>
+                    <div class="settings-field"><label>Ridge (LF)</label><input id="setCustRidge" type="number" min="0" step="0.1" /></div>
+                    <div class="settings-field"><label>Hip (LF)</label><input id="setCustHip" type="number" min="0" step="0.1" /></div>
+                    <div class="settings-field"><label>Valley (LF)</label><input id="setCustValley" type="number" min="0" step="0.1" /></div>
+                    <div class="settings-field"><label>Eave (LF)</label><input id="setCustEave" type="number" min="0" step="0.1" /></div>
+                    <div class="settings-field"><label>Rake (LF)</label><input id="setCustRake" type="number" min="0" step="0.1" /></div>
+                </div>
+                <span class="hint">Only client-requested locked fields are managed here. Customer-editable choices remain on estimator screen.</span>
+                <div class="settings-form-actions">
+                    <div class="page-form-actions">
+                        <button type="submit" id="btnSaveGeometry" class="btn-sm" disabled><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>Save geometry</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="panel-manufacturers" class="dash-tab-panel" role="tabpanel">
+        <p class="hint">Manage manufacturer products and coverage data used by estimation recommendations.</p>
+        <div class="filters-panel">
+            <div class="history-toolbar">
+                <div class="toolbar-actions-group">
+                    <div class="history-filter-field history-filter-search">
+                        <label for="mfrSearch">Search</label>
+                        <input type="search" id="mfrSearch" placeholder="Brand, category, or product…" autocomplete="off" />
+                    </div>
+                    <div class="filter-dropdown-wrap">
+                        <button type="button" class="tertiary filter-toggle-btn" id="btnMfrFilterToggle" aria-haspopup="true" aria-expanded="false" aria-controls="mfrFilterDropdown">
+                            <i class="fa-solid fa-filter" aria-hidden="true"></i>Filters
+                        </button>
+                        <div class="filter-dropdown-panel" id="mfrFilterDropdown">
+                            <div class="filter-dropdown-fields">
+                                <div class="history-filter-field">
+                                    <label for="mfrRoofType">Roof type</label>
+                                    <select id="mfrRoofType">
+                                        <option value="pitched">Pitched</option>
+                                        <option value="flat">Flat</option>
+                                    </select>
+                                </div>
+                                <div class="history-filter-field">
+                                    <label for="mfrSystemType">Flat system</label>
+                                    <select id="mfrSystemType">
+                                        <option value="">(any)</option>
+                                        <option value="tpo">TPO</option>
+                                        <option value="epdm">EPDM</option>
+                                        <option value="modified_bitumen">Modified bitumen</option>
+                                    </select>
+                                </div>
+                                <div class="history-filter-field">
+                                    <label for="mfrCategoryFilter">Category</label>
+                                    <select id="mfrCategoryFilter">
+                                        <option value="">(all categories)</option>
+                                        <option value="Shingles">Shingles</option>
+                                        <option value="Starter">Starter</option>
+                                        <option value="Ridge Cap">Ridge Cap</option>
+                                        <option value="Underlayment">Underlayment</option>
+                                        <option value="Ice & Water">Ice & Water</option>
+                                        <option value="Drip Edge">Drip Edge</option>
+                                        <option value="Fasteners">Fasteners</option>
+                                        <option value="Sealant">Sealant</option>
+                                        <option value="Flashing">Flashing</option>
+                                        <option value="TPO">TPO</option>
+                                        <option value="EPDM">EPDM</option>
+                                        <option value="MODIFIED_BITUMEN">MODIFIED_BITUMEN</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-dropdown-footer">
+                                <button type="button" class="btn-sm" id="btnLoadMfr"><i class="fa-solid fa-filter" aria-hidden="true"></i>Apply filters</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="tertiary btn-history-refresh" id="btnRefreshMfr"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>Refresh</button>
+                </div>
+                <div class="toolbar-actions-group" style="gap:8px;">
+                    <button type="button" class="tertiary btn-history-refresh" id="btnImportManufacturers"><i class="fa-solid fa-upload" aria-hidden="true"></i>Import</button>
+                    <button type="button" class="secondary btn-history-refresh" id="btnAddManufacturer"><i class="fa-solid fa-plus" aria-hidden="true"></i>Add manufacturer</button>
+                </div>
+            </div>
+            <div class="active-filter-badges" id="mfrActiveFilters" hidden aria-live="polite"></div>
+        </div>
+        <div class="table-wrap">
+            <table class="history-table mfr-group-table">
+                <thead>
+                    <tr>
+                        <th>Brand</th>
+                        <th>Details</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="mfrBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="mfrPagination"></div>
+    </div>
+
+    <div id="panel-products" class="dash-tab-panel" role="tabpanel">
+        <p class="hint">Product-focused view of manufacturer catalog with quick edit actions. Click a row to edit.</p>
+        <div class="filters-panel">
+            <div class="history-toolbar">
+                <div class="toolbar-actions-group">
+                    <div class="history-filter-field history-filter-search">
+                        <label for="prodSearch">Search</label>
+                        <input type="search" id="prodSearch" placeholder="Brand, category, or product…" autocomplete="off" />
+                    </div>
+                    <div class="filter-dropdown-wrap">
+                        <button type="button" class="tertiary filter-toggle-btn" id="btnProdFilterToggle" aria-haspopup="true" aria-expanded="false" aria-controls="prodFilterDropdown">
+                            <i class="fa-solid fa-filter" aria-hidden="true"></i>Filters
+                        </button>
+                        <div class="filter-dropdown-panel" id="prodFilterDropdown">
+                            <div class="filter-dropdown-fields">
+                                <div class="history-filter-field">
+                                    <label for="prodRoofType">Roof type</label>
+                                    <select id="prodRoofType">
+                                        <option value="">(all)</option>
+                                        <option value="pitched">Pitched</option>
+                                        <option value="flat">Flat</option>
+                                    </select>
+                                </div>
+                                <div class="history-filter-field">
+                                    <label for="prodSystemType">Flat system</label>
+                                    <select id="prodSystemType">
+                                        <option value="">(any)</option>
+                                        <option value="tpo">TPO</option>
+                                        <option value="epdm">EPDM</option>
+                                        <option value="modified_bitumen">Modified bitumen</option>
+                                    </select>
+                                </div>
+                                <div class="history-filter-field">
+                                    <label for="prodCategoryFilter">Category</label>
+                                    <select id="prodCategoryFilter">
+                                        <option value="">(all categories)</option>
+                                        <option value="Shingles">Shingles</option>
+                                        <option value="Starter">Starter</option>
+                                        <option value="Ridge Cap">Ridge Cap</option>
+                                        <option value="Underlayment">Underlayment</option>
+                                        <option value="Ice & Water">Ice & Water</option>
+                                        <option value="Drip Edge">Drip Edge</option>
+                                        <option value="Fasteners">Fasteners</option>
+                                        <option value="Sealant">Sealant</option>
+                                        <option value="Flashing">Flashing</option>
+                                        <option value="TPO">TPO</option>
+                                        <option value="EPDM">EPDM</option>
+                                        <option value="MODIFIED_BITUMEN">MODIFIED_BITUMEN</option>
+                                    </select>
+                                </div>
+                                <div class="history-filter-field">
+                                    <label for="prodActiveFilter">Status</label>
+                                    <select id="prodActiveFilter">
+                                        <option value="all">All</option>
+                                        <option value="active">Active only</option>
+                                        <option value="inactive">Inactive only</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-dropdown-footer">
+                                <button type="button" class="btn-sm" id="btnLoadProducts"><i class="fa-solid fa-filter" aria-hidden="true"></i>Apply filters</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="tertiary btn-history-refresh" id="btnRefreshProducts"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>Refresh</button>
+                </div>
+                <div class="toolbar-actions-group" style="gap:8px;">
+                    <button type="button" class="tertiary btn-history-refresh" id="btnImportProducts"><i class="fa-solid fa-upload" aria-hidden="true"></i>Import</button>
+                    <button type="button" class="secondary btn-history-refresh" id="btnAddProduct"><i class="fa-solid fa-plus" aria-hidden="true"></i>Add product</button>
+                </div>
+            </div>
+            <div class="active-filter-badges" id="prodActiveFilters" hidden aria-live="polite"></div>
+        </div>
+        <div class="table-wrap">
+            <table class="history-table products-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Brand</th>
+                        <th>Category</th>
+                        <th>Roof/System</th>
+                        <th>Coverage</th>
+                        <th>Unit</th>
+                        <th>Active</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="productsBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="productsPagination"></div>
+    </div>
+    </div>
+</div>
+
+<div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-box result-modal-box">
+        <div class="page-header modal-detail-header result-modal-header" style="margin-bottom:12px;">
+            <h3 style="margin:0;color:#fff;">Estimate detail</h3>
+            <div class="modal-detail-actions">
+                <button type="button" class="nav-link" id="modalClose" style="cursor:pointer;"><i class="fa-solid fa-xmark" aria-hidden="true"></i>Close</button>
+            </div>
+        </div>
+
+        <div class="result-modal-content">
+            <div id="modalResultSummary" class="result-summary" aria-live="polite"></div>
+
+            <div id="modalJsonPanel" class="json-panel" hidden>
+                <div class="json-panel-title">
+                    <span class="hint">Technical JSON</span>
+                </div>
+                <pre id="modalResultJson" class="json-pre"></pre>
+            </div>
+        </div>
+
+        <div class="result-modal-footer">
+            <button type="button" class="secondary" id="modalExportPdf">
+                <i class="fa-regular fa-file-pdf" aria-hidden="true"></i>PDF
+            </button>
+            <button type="button" class="secondary" id="modalExportDocx">
+                <i class="fa-regular fa-file-word" aria-hidden="true"></i>Word
+            </button>
+            <button type="button" class="tertiary" id="modalExportXlsx">
+                <i class="fa-regular fa-file-excel" aria-hidden="true"></i>Excel order
+            </button>
+            <button type="button" class="secondary" id="modalViewJson">
+                <i class="fa-regular fa-file-code" aria-hidden="true"></i>View JSON
+            </button>
+            <button type="button" class="copy-btn" id="modalCopy" aria-label="Copy estimate JSON">
+                <i class="fa-regular fa-copy" aria-hidden="true"></i>Copy JSON
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="mfrEditModalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-box">
+        <div class="page-header modal-detail-header" style="margin-bottom:12px;">
+            <h3 id="mfrModalTitle" style="margin:0;color:#fff;">Add manufacturer</h3>
+            <div class="modal-detail-actions">
+                <button type="button" class="nav-link" id="mfrModalClose"><i class="fa-solid fa-xmark" aria-hidden="true"></i>Close</button>
+            </div>
+        </div>
+        <form id="mfrForm" class="settings-fields-grid mfr-modal-grid">
+            <input id="mfrId" type="hidden" />
+            <div id="mfrFormRoofTypeWrap" class="settings-field"><label>Roof type</label><select id="mfrFormRoofType"><option value="pitched">pitched</option><option value="flat">flat</option></select></div>
+            <div id="mfrFormSystemTypeWrap" class="settings-field"><label>System type</label><select id="mfrFormSystemType"><option value="">(none)</option><option value="tpo">tpo</option><option value="epdm">epdm</option><option value="modified_bitumen">modified_bitumen</option></select></div>
+            <div class="settings-field"><label>Category</label><select id="mfrFormCategory" required>
+                <option value="">(select category)</option>
+                <option value="Shingles">Shingles</option>
+                <option value="Starter">Starter</option>
+                <option value="Ridge Cap">Ridge Cap</option>
+                <option value="Underlayment">Underlayment</option>
+                <option value="Ice & Water">Ice & Water</option>
+                <option value="Drip Edge">Drip Edge</option>
+                <option value="Fasteners">Fasteners</option>
+                <option value="Sealant">Sealant</option>
+                <option value="Flashing">Flashing</option>
+                <option value="TPO">TPO</option>
+                <option value="EPDM">EPDM</option>
+                <option value="MODIFIED_BITUMEN">MODIFIED_BITUMEN</option>
+            </select></div>
+            <div class="settings-field"><label>Brand</label><input id="mfrFormBrand" type="text" required /><select id="mfrFormBrandSelect" disabled hidden></select></div>
+            <div id="mfrProductFields">
+                <div class="settings-field"><label>Product</label><input id="mfrFormProduct" type="text" required /></div>
+                <div class="settings-field"><label>Unit</label><input id="mfrFormUnit" type="text" required /></div>
+                <div class="settings-field"><label>Coverage value</label><input id="mfrFormCoverageValue" type="number" min="0.0001" step="0.0001" required /></div>
+                <div class="settings-field"><label>Coverage basis</label><input id="mfrFormCoverageBasis" type="text" /></div>
+                <div class="settings-field"><label>Component type</label><input id="mfrFormComponentType" type="text" placeholder="membrane/base/underlayment" /></div>
+                <!-- Sort order is used for ordering but is not shown to the user. -->
+                <input id="mfrFormSortOrder" type="hidden" value="0" />
+            </div>
+            <div id="mfrFormActiveWrap" class="settings-field"><label>Active</label><select id="mfrFormIsActive"><option value="true">true</option><option value="false">false</option></select></div>
+            <div class="settings-field-full modal-form-footer">
+                <button type="submit" id="mfrFormSubmitBtn" class="btn-sm"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i><span id="mfrFormSubmitBtnLabel">Save manufacturer item</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="mfrDeleteModalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-box" style="max-width:520px;">
+        <h3 style="margin-top:0;">Confirm delete</h3>
+        <p class="hint" id="mfrDeleteText">Delete this manufacturer product?</p>
+        <div class="modal-form-footer">
+            <button type="button" class="tertiary btn-sm" id="mfrDeleteCancel"><i class="fa-solid fa-xmark" aria-hidden="true"></i>Cancel</button>
+            <button type="button" class="danger btn-sm" id="mfrDeleteConfirm"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>Delete</button>
+        </div>
+    </div>
+</div>
+
+<div id="productImportModalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-box product-import-modal">
+        <div class="page-header modal-detail-header" style="margin-bottom:12px;">
+            <h3 style="margin:0;color:#fff;">Import products</h3>
+            <div class="modal-detail-actions">
+                <button type="button" class="nav-link" id="productImportModalClose"><i class="fa-solid fa-xmark" aria-hidden="true"></i>Close</button>
+            </div>
+        </div>
+        <p class="hint" style="margin-top:0;">Download the CSV template for the exact columns this import accepts. Valid rows are imported; failed rows are skipped and returned in a downloadable report.</p>
+        <div class="product-import-format-head">
+            <button type="button" class="tertiary btn-sm" id="btnDownloadImportTemplate">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>Download CSV Format File
+            </button>
+        </div>
+        <div class="product-import-dropzone" id="productImportDropzone" tabindex="0" role="button" aria-label="Select or drop import files">
+            <input type="file" id="productImportFileInput" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple hidden />
+            <div class="product-import-dropzone-icon"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i></div>
+            <div class="product-import-dropzone-title">Drop CSV / XLSX files here or Click to browse</div>
+        </div>
+        <ul class="product-import-file-list" id="productImportFileList" hidden></ul>
+        <div class="modal-form-footer product-import-footer">
+            <button type="button" class="btn-sm" id="btnRunProductImport" disabled>
+                <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+                <span id="btnRunProductImportLabel">Import</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="manufacturerImportModalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-box product-import-modal">
+        <div class="page-header modal-detail-header" style="margin-bottom:12px;">
+            <h3 style="margin:0;color:#fff;">Import manufacturers</h3>
+            <div class="modal-detail-actions">
+                <button type="button" class="nav-link" id="manufacturerImportModalClose"><i class="fa-solid fa-xmark" aria-hidden="true"></i>Close</button>
+            </div>
+        </div>
+        <p class="hint" style="margin-top:0;">Download the CSV template for the exact columns this import accepts. Each valid row creates a manufacturer group (same as Add manufacturer). Failed rows are skipped and returned in a downloadable report.</p>
+        <div class="product-import-format-head">
+            <button type="button" class="tertiary btn-sm" id="btnDownloadManufacturerImportTemplate">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>Download CSV Format File
+            </button>
+        </div>
+        <div class="product-import-dropzone" id="manufacturerImportDropzone" tabindex="0" role="button" aria-label="Select or drop import files">
+            <input type="file" id="manufacturerImportFileInput" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple hidden />
+            <div class="product-import-dropzone-icon"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i></div>
+            <div class="product-import-dropzone-title">Drop CSV / XLSX files here or Click to browse</div>
+        </div>
+        <ul class="product-import-file-list" id="manufacturerImportFileList" hidden></ul>
+        <div class="modal-form-footer product-import-footer">
+            <button type="button" class="btn-sm" id="btnRunManufacturerImport" disabled>
+                <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+                <span id="btnRunManufacturerImportLabel">Import</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/toast.js"></script>
+<script src="/js/nav-auth.js"></script>
+<script>
+    const PRICE_LABELS = {
+        flat_membrane_roll: "Flat membrane (per roll)",
+        flat_base_roll: "Flat base / cover board (per roll)",
+        sealant_tube: "Roof sealant (per tube)",
+        shingles_bundle: "Shingles (per bundle)",
+        starter_bundle: "Starter (per bundle)",
+        ridge_bundle: "Ridge caps (per bundle)",
+        underlayment_roll: "Underlayment (per roll)",
+        drip_edge_piece: "Drip edge (per piece)",
+        valley_roll: "Valley (per roll)",
+        nail_unit: "Nails (per nail, est.)",
+        vent_unit: "Vents (per unit)",
+        flashing_piece: "Flashing (per piece)"
+    };
+
+    function showErr(msg) {
+        errorBanner.textContent = msg;
+        errorBanner.classList.add("visible");
+    }
+    function clearErr() {
+        errorBanner.classList.remove("visible");
+        errorBanner.textContent = "";
+    }
+
+    function ordinal(n) {
+        const s = n % 100;
+        if (s >= 11 && s <= 13) return "th";
+        switch (n % 10) {
+            case 1:
+                return "st";
+            case 2:
+                return "nd";
+            case 3:
+                return "rd";
+            default:
+                return "th";
+        }
+    }
+
+    function formatDisplayDateTime(dateStr) {
+        if (!dateStr) return "—";
+        const d = new Date(String(dateStr).replace(" ", "T"));
+        if (Number.isNaN(d.getTime())) return "—";
+        const months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+        ];
+        const day = d.getDate();
+        const month = months[d.getMonth()] || "";
+        const year = d.getFullYear();
+        const rawH = d.getHours();
+        const meridiem = rawH >= 12 ? "P.M" : "A.M";
+        const h12 = rawH % 12 === 0 ? 12 : rawH % 12;
+        const hh = String(h12).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        return `${day}${ordinal(day)} ${month} ${year} - ${hh}:${mm} ${meridiem}`;
+    }
+
+    function fmt(n, digits = 2) {
+        if (n === undefined || n === null || n === "") return "—";
+        const num = Number(n);
+        if (!Number.isFinite(num)) return "—";
+        const isInt = Math.abs(num - Math.round(num)) < 1e-9;
+        return isInt ? String(Math.round(num)) : num.toFixed(digits);
+    }
+
+    function fmtMoney(n) {
+        const num = Number(n);
+        if (!Number.isFinite(num)) return "—";
+        return "$" + num.toFixed(2);
+    }
+
+    function profileNum(v) {
+        const raw = String(v ?? "").trim();
+        if (raw === "") return null;
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    function setCustomerProfileFields(profile) {
+        const p = profile && typeof profile === "object" ? profile : {};
+        const roof = p.roof && typeof p.roof === "object" ? p.roof : {};
+        const lengths = p.lengths && typeof p.lengths === "object" ? p.lengths : {};
+        setCustArea.value = roof.area_sqft ?? "";
+        setCustPitch.value = roof.pitch ?? "";
+        setCustPitchedArea.value = roof.pitched_area_sqft ?? "";
+        setCustFlatArea.value = roof.flat_area_sqft ?? "";
+        setCustRidge.value = lengths.ridge_lf ?? "";
+        setCustHip.value = lengths.hip_lf ?? "";
+        setCustValley.value = lengths.valley_lf ?? "";
+        setCustEave.value = lengths.eave_lf ?? "";
+        setCustRake.value = lengths.rake_lf ?? "";
+    }
+
+    function buildCustomerProfileFromFields() {
+        const totalArea = profileNum(setCustArea.value);
+        const pitchedArea = profileNum(setCustPitchedArea.value);
+        const flatArea = profileNum(setCustFlatArea.value);
+        // Geometry only — roof type, brands, waste, complexity, flat system, and shingle style
+        // stay customer-editable in the estimator; never embed them in this profile.
+        return {
+            roof: {
+                area_sqft: totalArea,
+                pitched_area_sqft: pitchedArea,
+                flat_area_sqft: flatArea,
+                area_input_type: "slope_adjusted",
+                pitch: profileNum(setCustPitch.value)
+            },
+            lengths: {
+                ridge_lf: profileNum(setCustRidge.value),
+                hip_lf: profileNum(setCustHip.value),
+                valley_lf: profileNum(setCustValley.value),
+                eave_lf: profileNum(setCustEave.value),
+                rake_lf: profileNum(setCustRake.value)
+            }
+        };
+    }
+
+    function validateCustomerProfile(profile) {
+        const errors = [];
+        const roof = profile?.roof || {};
+        const lengths = profile?.lengths || {};
+        const area = Number(roof.area_sqft);
+        const pitch = Number(roof.pitch);
+        if (!Number.isFinite(area) || area <= 0) errors.push("Total area must be > 0.");
+        if (!Number.isFinite(pitch) || pitch < 0 || pitch > 24) errors.push("Pitch must be between 0 and 24.");
+        const pa = Number(roof.pitched_area_sqft);
+        const fa = Number(roof.flat_area_sqft);
+        if (Number.isFinite(pa) && pa > 0 && Number.isFinite(fa) && fa > 0) {
+            if (Math.abs((pa + fa) - area) > 0.001) {
+                errors.push("When pitched and flat areas are both provided, total area must equal pitched + flat.");
+            }
+        }
+        for (const k of ["ridge_lf", "hip_lf", "valley_lf", "eave_lf", "rake_lf"]) {
+            const n = Number(lengths[k]);
+            if (!Number.isFinite(n) || n < 0) {
+                errors.push(`${k} must be a non-negative number.`);
+                break;
+            }
+        }
+        return errors;
+    }
+
+    let lastModalJsonText = "";
+    let lastModalPayload = null;
+
+    function mergePricingBreakdownDash(pricing) {
+        const b = pricing?.breakdown;
+        if (!b) return {};
+        if (b.pitched && b.flat) {
+            const p = b.pitched;
+            const f = b.flat;
+            return {
+                flatMembrane: Number(p.flatMembrane || 0) + Number(f.flatMembrane || 0),
+                flatBase: Number(p.flatBase || 0) + Number(f.flatBase || 0),
+                shingles: Number(p.shingles || 0) + Number(f.shingles || 0),
+                starter: Number(p.starter || 0) + Number(f.starter || 0),
+                ridgeCaps: Number(p.ridgeCaps || 0) + Number(f.ridgeCaps || 0),
+                underlayment: Number(p.underlayment || 0) + Number(f.underlayment || 0),
+                dripEdge: Number(p.dripEdge || 0) + Number(f.dripEdge || 0),
+                valley: Number(p.valley || 0) + Number(f.valley || 0),
+                nails: Number(p.nails || 0) + Number(f.nails || 0),
+                vents: Number(p.vents || 0) + Number(f.vents || 0),
+                flashing: Number(p.flashing || 0) + Number(f.flashing || 0)
+            };
+        }
+        return b;
+    }
+
+    function renderDetailSummary(item) {
+        const materials = item?.materials || {};
+        const pricing = item?.pricing || {};
+        const input = item?.input || {};
+        const meta = materials.meta || {};
+
+        const pitchPrimary = input.roof?.pitch ?? meta.pitch ?? "—";
+        const pitchList = input.roof?.pitches;
+        const pitchDisplay =
+            Array.isArray(pitchList) && pitchList.length > 1
+                ? pitchList.map((p) => fmt(p, 1)).join(", ")
+                : fmt(pitchPrimary, 1);
+        const surfaceArea = meta.surfaceArea ?? materials.shingles?.surfaceArea ?? "—";
+        const pitchedSuggestedPct = materials?.pitched?.meta?.suggestedWasteFactor;
+        const flatSuggestedPct = materials?.flat?.meta?.suggestedWasteFactor;
+        const wasteFactorMeta = meta.suggestedWasteFactor ?? meta.wasteFactor;
+        const isMixed = meta.roofType === "mixed";
+        let suggestedKpiHtml = "—";
+        if (isMixed) {
+            const pStr =
+                pitchedSuggestedPct != null ? `${(Number(pitchedSuggestedPct) * 100).toFixed(2)}%` : "—";
+            const fStr = flatSuggestedPct != null ? `${(Number(flatSuggestedPct) * 100).toFixed(2)}%` : "—";
+            suggestedKpiHtml = `Pitched ${escapeHtml(pStr)} · Flat ${escapeHtml(fStr)}`;
+        } else {
+            const w = pitchedSuggestedPct ?? flatSuggestedPct ?? wasteFactorMeta;
+            suggestedKpiHtml =
+                w != null ? escapeHtml(`${(Number(w) * 100).toFixed(2)}%`) : "—";
+        }
+
+        const shingles = materials.shingles || {};
+        const starter = materials.starter || {};
+        const ridgeCaps = materials.ridgeCaps || {};
+        const underlayment = materials.underlayment || {};
+        const dripEdge = materials.dripEdge || {};
+        const valley = materials.valley || {};
+        const nails = materials.nails || {};
+        const vents = materials.vents || {};
+        const flashing = materials.flashing || {};
+        const breakdown = mergePricingBreakdownDash(pricing);
+
+        function unitPerQty(qty, dollars) {
+            const q = Number(qty);
+            const d = Number(dollars);
+            if (!Number.isFinite(q) || q <= 0 || !Number.isFinite(d)) return "—";
+            return fmtMoney(d / q);
+        }
+
+        const rows = [
+            { name: "Shingles", qty: shingles.bundles, unit: "bundles", extra: shingles.squares ? `${fmt(shingles.squares)} squares` : null, bd: "shingles" },
+            { name: "Starter", qty: starter.bundles, unit: "bundles", extra: starter.lf ? `${fmt(starter.lf, 1)} LF` : null, bd: "starter" },
+            { name: "Ridge caps", qty: ridgeCaps.bundles, unit: "bundles", extra: ridgeCaps.lf ? `${fmt(ridgeCaps.lf, 1)} LF` : null, bd: "ridgeCaps" },
+            { name: "Underlayment", qty: underlayment.rolls, unit: "rolls", extra: null, bd: "underlayment" },
+            { name: "Drip edge", qty: dripEdge.pieces, unit: "pieces", extra: dripEdge.lf ? `${fmt(dripEdge.lf, 1)} LF` : null, bd: "dripEdge" },
+            { name: "Valley", qty: valley.rolls, unit: "rolls", extra: valley.lf ? `${fmt(valley.lf, 1)} LF` : null, bd: "valley" },
+            { name: "Nails", qty: nails.count, unit: "count", extra: null, bd: "nails" },
+            { name: "Vents", qty: vents.units, unit: "units", extra: null, bd: "vents" },
+            { name: "Flashing", qty: flashing.pieces, unit: "pieces", extra: flashing.lf ? `${fmt(flashing.lf, 1)} LF` : null, bd: "flashing" }
+        ];
+
+        const materialsHtml = rows
+            .map((r) => {
+                const extra = r.extra ? `<div class="result-row-extra">${escapeHtml(r.extra)}</div>` : "";
+                const unitPriceCell = unitPerQty(r.qty, breakdown[r.bd]);
+                return `<tr>
+                    <td class="result-table-item">${escapeHtml(r.name)}</td>
+                    <td class="result-table-qty">${escapeHtml(fmt(r.qty, 2))}</td>
+                    <td class="result-table-unit">${escapeHtml(r.unit)}</td>
+                    <td class="result-table-unit">${escapeHtml(unitPriceCell)}</td>
+                    <td>${extra}</td>
+                </tr>`;
+            })
+            .join("");
+
+        const pricingLines = [
+            ["Flat membrane (rolls)", breakdown.flatMembrane],
+            ["Flat base / accessory (rolls)", breakdown.flatBase],
+            ["Shingles", breakdown.shingles],
+            ["Starter", breakdown.starter],
+            ["Ridge caps", breakdown.ridgeCaps],
+            ["Underlayment", breakdown.underlayment],
+            ["Drip edge", breakdown.dripEdge],
+            ["Valley", breakdown.valley],
+            ["Nails", breakdown.nails],
+            ["Vents", breakdown.vents],
+            ["Flashing", breakdown.flashing]
+        ];
+
+        const pricingHtml = pricingLines
+            .filter(([, v]) => Number.isFinite(Number(v)))
+            .map(([label, val]) => `<tr><td>${escapeHtml(label)}</td><td class="result-money-td">${fmtMoney(val)}</td></tr>`)
+            .join("");
+
+        const total = pricing.total;
+        const subtotal = pricing.subtotal;
+        const marginAmount = pricing.marginAmount;
+        const marginPercent = pricing.marginPercent;
+
+        modalResultSummary.innerHTML = `
+            <div class="result-summary-grid">
+                <div class="result-kpi-grid result-kpi-grid--three">
+                    <div class="result-kpi">
+                        <span class="hint">Pitch (recorded)</span>
+                        <div class="result-kpi-value">${escapeHtml(String(pitchDisplay))}</div>
+                        <div class="result-kpi-unit">rise / 12 in run</div>
+                    </div>
+                    <div class="result-kpi">
+                        <span class="hint">Surface area</span>
+                        <div class="result-kpi-value">${escapeHtml(String(fmt(surfaceArea)))}</div>
+                        <div class="result-kpi-unit">sq ft (slope-adjusted input)</div>
+                    </div>
+                    <div class="result-kpi">
+                        <span class="hint">Suggested waste (model)</span>
+                        <div class="result-kpi-value">${suggestedKpiHtml}</div>
+                        <div class="result-kpi-unit">percent in material qty</div>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">Materials quantities</div>
+                    <table class="result-material-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th>Unit price</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>${materialsHtml}</tbody>
+                    </table>
+                </div>
+
+                <div class="result-section result-pricing">
+                    <div class="result-section-title">Pricing</div>
+                    <table class="result-breakdown-table">
+                        <tbody>${pricingHtml || `<tr><td colspan="2" class="hint">No pricing breakdown.</td></tr>`}</tbody>
+                    </table>
+                    <div class="result-pricing-total" style="margin-top:14px;">
+                        <div class="hint">Subtotal</div>
+                        <div class="result-pricing-subhint">${escapeHtml(fmtMoney(subtotal))} &nbsp;·&nbsp; Margin ${escapeHtml(fmtMoney(marginAmount))} (${escapeHtml(String(marginPercent))}%)</div>
+                        <div class="hint" style="margin-top:10px;">Total</div>
+                        <div class="result-pricing-total-val">${escapeHtml(fmtMoney(total))}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function toastForMethod(path, method, j, ok) {
+        const methodUpper = method.toUpperCase();
+        const shouldToast = ["POST", "PUT", "PATCH", "DELETE"].includes(methodUpper);
+        if (!shouldToast) return;
+        if (path.includes("/api/admin/manufacturers/import")) return;
+        if (typeof window.showToast !== "function") return;
+
+        const isSuccess = !!(ok && j && j.success === true);
+        if (isSuccess) {
+            let msg = "Request succeeded.";
+            if (path.includes("/api/admin/profile")) msg = "Profile updated.";
+            else if (path.includes("/api/admin/password")) msg = "Password updated.";
+            else if (path.includes("/api/admin/settings")) msg = "Settings saved.";
+            else if (path.includes("/api/auth/logout")) msg = "Signed out.";
+            window.showToast("success", msg);
+        } else {
+            const msg = j?.error?.message || j?.error?.code || "Request failed.";
+            window.showToast("error", msg);
+        }
+    }
+
+    async function api(path, opts = {}) {
+        const method = (opts.method || "GET").toUpperCase();
+        try {
+            const isFormData = typeof FormData !== "undefined" && opts.body instanceof FormData;
+            const headers = { ...(opts.headers || {}) };
+            if (!isFormData && !headers["Content-Type"]) {
+                headers["Content-Type"] = "application/json";
+            }
+            const r = await fetch(path, {
+                credentials: "include",
+                ...opts,
+                headers,
+                method
+            });
+            const j = await r.json().catch(() => ({}));
+            toastForMethod(path, method, j, r.ok);
+            return { ok: r.ok, status: r.status, json: j };
+        } catch (e) {
+            toastForMethod(path, method, { error: { message: e?.message || "Network error." } }, false);
+            throw e;
+        }
+    }
+
+    const DASH_TAB_NAMES = ["stats", "profile", "history", "manufacturers", "products", "settings"];
+
+    function setTab(name) {
+        document.querySelectorAll(".dash-tab-btn").forEach((b) => {
+            const on = b.dataset.tab === name;
+            b.classList.toggle("active", on);
+            b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        document.querySelectorAll(".dash-tab-panel").forEach((p) => {
+            p.classList.toggle("active", p.id === "panel-" + name);
+        });
+    }
+
+    function loadTabData(name) {
+        if (name === "stats") loadStats();
+        if (name === "profile") loadProfile();
+        if (name === "history") loadHistory();
+        if (name === "settings") loadSettings();
+        if (name === "manufacturers") loadManufacturers();
+        if (name === "products") loadProducts();
+    }
+
+    // Tabs are addressed by URL hash (e.g. #history) so a refresh or a
+    // shared link keeps the user on the same tab instead of bouncing to stats.
+    function tabNameFromHash() {
+        const raw = String(window.location.hash || "").replace(/^#/, "").trim();
+        return DASH_TAB_NAMES.includes(raw) ? raw : null;
+    }
+
+    let currentDashTab = null;
+    /** Assigned after filter controls are wired (avoids TDZ on later lets/consts). */
+    let clearTabFiltersOnLeave = (_leavingTab) => {};
+
+    function activateTab(name, opts = {}) {
+        const tab = DASH_TAB_NAMES.includes(name) ? name : "stats";
+        if (currentDashTab && currentDashTab !== tab) {
+            clearTabFiltersOnLeave(currentDashTab);
+        }
+        currentDashTab = tab;
+        setTab(tab);
+        loadTabData(tab);
+        if (opts.updateHash !== false && tabNameFromHash() !== tab) {
+            history.replaceState(null, "", "#" + tab);
+        }
+        if (opts.scroll !== false) {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }
+
+    document.querySelectorAll(".dash-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            activateTab(btn.dataset.tab);
+        });
+    });
+
+    window.addEventListener("hashchange", () => {
+        const tab = tabNameFromHash();
+        if (tab) activateTab(tab, { updateHash: false });
+    });
+
+    async function requireSession() {
+        const { ok, json } = await api("/api/auth/me");
+        if (!ok || !json.success || !json.user) {
+            window.location.href = "/login.html";
+            return null;
+        }
+        return json.user;
+    }
+
+    async function loadStats() {
+        const { ok, json } = await api("/api/admin/stats");
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load stats.");
+            return;
+        }
+        clearErr();
+        const s = json.stats;
+        const lastRun = s.lastRunAt ? formatDisplayDateTime(s.lastRunAt) : "—";
+        statGrid.innerHTML = `
+            <div class="stat-card"><div class="hint">Total estimates</div><div class="val">${s.totalCalculations}</div></div>
+            <div class="stat-card"><div class="hint">Last 7 days</div><div class="val">${s.lastSevenDays}</div></div>
+            <div class="stat-card"><div class="hint">Last 30 days</div><div class="val">${s.lastThirtyDays}</div></div>
+            <div class="stat-card"><div class="hint">Last run</div><div class="val" style="font-size:1rem;color:var(--text-main);">${escapeHtml(lastRun)}</div></div>
+        `;
+
+        statsLatestBody.innerHTML = "";
+        const latest = Array.isArray(s.latestFive) ? s.latestFive : [];
+        if (!latest.length) {
+            statsLatestBody.innerHTML = `<tr><td colspan="7" class="hint">No records yet.</td></tr>`;
+            return;
+        }
+        for (const row of latest) {
+            const tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+            const who =
+                row.user_name != null && String(row.user_name).trim() !== ""
+                    ? escapeHtml(String(row.user_name))
+                    : "—";
+            const sum = row.summary || {};
+            const area = sum.planArea != null ? `${fmt(sum.planArea)} sq ft` : "—";
+            const pitch = sum.pitch != null ? fmt(sum.pitch, 1) : "—";
+            const surface = sum.surfaceArea != null ? `${fmt(sum.surfaceArea)} sq ft` : "—";
+            const waste = sum.wasteFactor != null ? fmt(sum.wasteFactor, 3) : "—";
+            const total = sum.total != null ? fmtMoney(sum.total) : "—";
+            tr.innerHTML = `
+                <td>${escapeHtml(formatDisplayDateTime(row.created_at))}</td>
+                <td>${who}</td>
+                <td>${escapeHtml(area)}</td>
+                <td>${escapeHtml(pitch)}</td>
+                <td>${escapeHtml(surface)}</td>
+                <td>${escapeHtml(waste)}</td>
+                <td>${escapeHtml(total)}</td>
+                <!-- <td class="history-td-copy">
+                    <button type="button" class="history-row-copy tertiary" aria-label="Copy full estimate JSON">
+                        <i class="fa-regular fa-copy" aria-hidden="true"></i><span class="sr-only">Copy</span>
+                    </button>
+                </td> -->
+            `;
+            tr.addEventListener("click", () => openHistoryDetail(row.id));
+            statsLatestBody.appendChild(tr);
+        }
+    }
+
+    async function loadProfile() {
+        const { ok, json } = await api("/api/admin/profile");
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load profile.");
+            return;
+        }
+        clearErr();
+        const p = json.profile;
+        profileInfo.innerHTML = `
+            <form id="profileForm">
+                <h3>Account Information</h3>
+                <label>Email</label>
+                <input id="profileEmail" type="email" maxlength="320" value="${escapeAttr(p.email || "")}" />
+                <label>Display name</label>
+                <input id="dispName" type="text" maxlength="120" value="${escapeAttr(p.displayName || "")}" />
+                <div class="buttons"><button type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>Save profile</button></div>
+            </form>
+        `;
+        profileForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const r = await api("/api/admin/profile", {
+                method: "PUT",
+                body: JSON.stringify({
+                    email: profileEmail.value.trim(),
+                    displayName: dispName.value.trim()
+                })
+            });
+            if (!r.ok || !r.json.success) {
+                showErr(r.json.error?.message || "Update failed.");
+                return;
+            }
+            clearErr();
+            loadProfile();
+        });
+    }
+
+    pwdForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const r = await api("/api/admin/password", {
+            method: "PUT",
+            body: JSON.stringify({
+                currentPassword: curPwd.value,
+                newPassword: newPwd.value
+            })
+        });
+        if (!r.ok || !r.json.success) {
+            showErr(r.json.error?.message || r.json.error?.details?.join("; ") || "Password change failed.");
+            return;
+        }
+        clearErr();
+        curPwd.value = "";
+        newPwd.value = "";
+    });
+
+    /**
+     * Renders a compact Prev/Next + windowed page-number pagination control
+     * into `containerEl`. `onPageChange(page)` is called with a 1-based page.
+     */
+    function renderPagination(containerEl, { page, pageSize, total, onPageChange }) {
+        if (!containerEl) return;
+        if (!total || total <= 0) {
+            containerEl.innerHTML = "";
+            return;
+        }
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        const current = Math.min(Math.max(1, page), totalPages);
+        const startItem = (current - 1) * pageSize + 1;
+        const endItem = Math.min(current * pageSize, total);
+
+        const pageNums = new Set([1, totalPages]);
+        for (let p = current - 1; p <= current + 1; p++) {
+            if (p >= 1 && p <= totalPages) pageNums.add(p);
+        }
+        const sortedPages = Array.from(pageNums).sort((a, b) => a - b);
+
+        let numbersHtml = "";
+        let prevPage = null;
+        for (const p of sortedPages) {
+            if (prevPage !== null && p - prevPage > 1) {
+                numbersHtml += `<span class="pagination-ellipsis">…</span>`;
+            }
+            numbersHtml += `<button type="button" class="pagination-btn${p === current ? " active" : ""}" data-page="${p}" aria-label="Page ${p}"${p === current ? ' aria-current="page"' : ""}>${p}</button>`;
+            prevPage = p;
+        }
+
+        containerEl.innerHTML = `
+            <div class="pagination-summary">Showing ${startItem}–${endItem} of ${total}</div>
+            <div class="pagination-controls">
+                <button type="button" class="pagination-btn" data-page="${current - 1}" aria-label="Previous page" ${current <= 1 ? "disabled" : ""}><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                ${numbersHtml}
+                <button type="button" class="pagination-btn" data-page="${current + 1}" aria-label="Next page" ${current >= totalPages ? "disabled" : ""}><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+            </div>
+        `;
+        containerEl.querySelectorAll(".pagination-btn[data-page]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const p = Number(btn.dataset.page);
+                if (Number.isFinite(p) && p >= 1 && p <= totalPages && p !== current) {
+                    onPageChange(p);
+                }
+            });
+        });
+    }
+
+    /**
+     * Wires a "Filters" toggle button to a dropdown panel: click to open/close,
+     * click outside or Escape to close. Returns { close } so callers can close
+     * the panel programmatically (e.g. after Apply is clicked).
+     */
+    function setupFilterDropdown(toggleBtn, panel) {
+        if (!toggleBtn || !panel) return { close: () => {} };
+
+        function close() {
+            panel.classList.remove("open");
+            toggleBtn.setAttribute("aria-expanded", "false");
+        }
+        function open() {
+            panel.classList.add("open");
+            toggleBtn.setAttribute("aria-expanded", "true");
+        }
+
+        toggleBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            if (panel.classList.contains("open")) close();
+            else open();
+        });
+        document.addEventListener("click", (ev) => {
+            if (!panel.classList.contains("open")) return;
+            if (panel.contains(ev.target) || toggleBtn.contains(ev.target)) return;
+            close();
+        });
+        document.addEventListener("keydown", (ev) => {
+            if (ev.key === "Escape" && panel.classList.contains("open")) close();
+        });
+
+        return { close, open };
+    }
+
+    function selectOptionLabel(selectEl) {
+        if (!selectEl) return "";
+        const opt = selectEl.selectedOptions?.[0];
+        return opt ? String(opt.textContent || "").trim() : String(selectEl.value || "").trim();
+    }
+
+    /**
+     * Render removable filter badges.
+     * @param {HTMLElement|null} container
+     * @param {{ key: string, label: string, value: string, onRemove: () => void }[]} badges
+     */
+    function renderActiveFilterBadges(container, badges) {
+        if (!container) return;
+        const list = Array.isArray(badges) ? badges.filter((b) => b && b.value) : [];
+        container.innerHTML = "";
+        if (!list.length) {
+            container.hidden = true;
+            return;
+        }
+        container.hidden = false;
+        for (const badge of list) {
+            const chip = document.createElement("span");
+            chip.className = "filter-badge";
+            chip.dataset.filterKey = badge.key;
+            chip.innerHTML = `
+                <span class="filter-badge-label">${escapeHtml(badge.label)}</span>
+                <span class="filter-badge-value">${escapeHtml(badge.value)}</span>
+                <button type="button" class="filter-badge-remove" aria-label="Remove ${escapeAttr(badge.label)} filter">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            `;
+            chip.querySelector(".filter-badge-remove")?.addEventListener("click", () => {
+                badge.onRemove();
+            });
+            container.appendChild(chip);
+        }
+    }
+
+    function refreshMfrFilterBadges() {
+        const container = document.getElementById("mfrActiveFilters");
+        const badges = [];
+        // Default roof type is pitched — only badge non-default (flat) so a clean tab shows no chips.
+        if (mfrRoofType?.value && mfrRoofType.value !== "pitched") {
+            badges.push({
+                key: "roofType",
+                label: "Roof type",
+                value: selectOptionLabel(mfrRoofType),
+                onRemove: () => {
+                    mfrRoofType.value = "pitched";
+                    mfrPage = 1;
+                    loadManufacturers();
+                }
+            });
+        }
+        if (mfrSystemType?.value) {
+            badges.push({
+                key: "systemType",
+                label: "Flat system",
+                value: selectOptionLabel(mfrSystemType),
+                onRemove: () => {
+                    mfrSystemType.value = "";
+                    mfrPage = 1;
+                    loadManufacturers();
+                }
+            });
+        }
+        if (mfrCategoryFilter?.value) {
+            badges.push({
+                key: "category",
+                label: "Category",
+                value: selectOptionLabel(mfrCategoryFilter),
+                onRemove: () => {
+                    mfrCategoryFilter.value = "";
+                    mfrPage = 1;
+                    if (cachedMfrGroupedItems.length) renderManufacturersTable();
+                    else loadManufacturers();
+                    refreshMfrFilterBadges();
+                }
+            });
+        }
+        renderActiveFilterBadges(container, badges);
+    }
+
+    function refreshProdFilterBadges() {
+        const container = document.getElementById("prodActiveFilters");
+        const badges = [];
+        if (prodRoofType?.value) {
+            badges.push({
+                key: "roofType",
+                label: "Roof type",
+                value: selectOptionLabel(prodRoofType),
+                onRemove: () => {
+                    prodRoofType.value = "";
+                    prodPage = 1;
+                    loadProducts();
+                }
+            });
+        }
+        if (prodSystemType?.value) {
+            badges.push({
+                key: "systemType",
+                label: "Flat system",
+                value: selectOptionLabel(prodSystemType),
+                onRemove: () => {
+                    prodSystemType.value = "";
+                    prodPage = 1;
+                    loadProducts();
+                }
+            });
+        }
+        if (prodCategoryFilter?.value) {
+            badges.push({
+                key: "category",
+                label: "Category",
+                value: selectOptionLabel(prodCategoryFilter),
+                onRemove: () => {
+                    prodCategoryFilter.value = "";
+                    prodPage = 1;
+                    if (cachedProductItems.length) renderProductsTable();
+                    else loadProducts();
+                    refreshProdFilterBadges();
+                }
+            });
+        }
+        if (prodActiveFilter?.value && prodActiveFilter.value !== "all") {
+            badges.push({
+                key: "active",
+                label: "Status",
+                value: selectOptionLabel(prodActiveFilter),
+                onRemove: () => {
+                    prodActiveFilter.value = "all";
+                    prodPage = 1;
+                    loadProducts();
+                }
+            });
+        }
+        renderActiveFilterBadges(container, badges);
+    }
+
+    let historyPage = 1;
+    const HISTORY_PAGE_SIZE = 10;
+
+    function historyQueryString() {
+        const params = new URLSearchParams({
+            limit: String(HISTORY_PAGE_SIZE),
+            offset: String((historyPage - 1) * HISTORY_PAGE_SIZE)
+        });
+        const from = historyDateFrom.value;
+        const to = historyDateTo.value;
+        if (from) params.set("dateFrom", from);
+        if (to) params.set("dateTo", to);
+        return params.toString();
+    }
+
+    async function loadHistory() {
+        const { ok, json } = await api("/api/admin/history?" + historyQueryString());
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load history.");
+            return;
+        }
+        clearErr();
+        historyBody.innerHTML = "";
+        if (!json.items.length) {
+            historyBody.innerHTML = `<tr><td colspan="7" class="hint">No history records match the current filters.</td></tr>`;
+        }
+        for (const row of json.items) {
+            const tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+            const who =
+                row.user_name != null && String(row.user_name).trim() !== ""
+                    ? escapeHtml(String(row.user_name))
+                    : "—";
+            const sum = row.summary || {};
+            const area = sum.planArea != null ? `${fmt(sum.planArea)} sq ft` : "—";
+            const pitch = sum.pitch != null ? fmt(sum.pitch, 1) : "—";
+            const surface = sum.surfaceArea != null ? `${fmt(sum.surfaceArea)} sq ft` : "—";
+            const waste = sum.wasteFactor != null ? fmt(sum.wasteFactor, 3) : "—";
+            const total = sum.total != null ? fmtMoney(sum.total) : "—";
+            tr.innerHTML = `
+                <td>${escapeHtml(formatDisplayDateTime(row.created_at))}</td>
+                <td>${who}</td>
+                <td>${escapeHtml(area)}</td>
+                <td>${escapeHtml(pitch)}</td>
+                <td>${escapeHtml(surface)}</td>
+                <td>${escapeHtml(waste)}</td>
+                <td>${escapeHtml(total)}</td>
+                <!-- <td class="history-td-copy">
+                    <button type="button" class="history-row-copy tertiary" aria-label="Copy full estimate JSON">
+                        <i class="fa-regular fa-copy" aria-hidden="true"></i><span class="sr-only">Copy</span>
+                    </button>
+                </td> -->
+            `;
+            tr.addEventListener("click", () => openHistoryDetail(row.id));
+            historyBody.appendChild(tr);
+        }
+        renderPagination(historyPagination, {
+            page: historyPage,
+            pageSize: HISTORY_PAGE_SIZE,
+            total: Number(json.total) || 0,
+            onPageChange: (p) => {
+                historyPage = p;
+                loadHistory();
+            }
+        });
+    }
+
+    async function copyHistoryEntry(id, feedbackEl) {
+        const { ok, json } = await api("/api/admin/history/" + id);
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load entry to copy.");
+            return;
+        }
+        const text = JSON.stringify(json.item, null, 2);
+        try {
+            await navigator.clipboard.writeText(text);
+            if (feedbackEl && feedbackEl.tagName === "BUTTON") {
+                const label = feedbackEl.querySelector(".sr-only");
+                const prev = label ? label.textContent : "";
+                if (label) label.textContent = "Copied!";
+                setTimeout(() => {
+                    if (label) label.textContent = prev;
+                }, 1500);
+            }
+            if (typeof window.showToast === "function") {
+                window.showToast("success", "History item copied.");
+            }
+        } catch {
+            showErr("Could not copy to clipboard.");
+        }
+    }
+
+    async function openHistoryDetail(id) {
+        const { ok, json } = await api("/api/admin/history/" + id);
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load detail.");
+            return;
+        }
+        clearErr();
+        lastModalPayload = json.item?.input || null;
+        lastModalJsonText = JSON.stringify(json.item, null, 2);
+        modalResultJson.textContent = lastModalJsonText;
+        modalJsonPanel.hidden = true;
+        renderDetailSummary(json.item);
+        modalBackdrop.classList.add("open");
+        modalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    modalClose.addEventListener("click", () => {
+        modalBackdrop.classList.remove("open");
+        modalBackdrop.setAttribute("aria-hidden", "true");
+    });
+    modalBackdrop.addEventListener("click", (e) => {
+        if (e.target === modalBackdrop) modalClose.click();
+    });
+
+    btnRefreshHistory.addEventListener("click", loadHistory);
+    btnApplyHistoryFilter.addEventListener("click", () => {
+        historyPage = 1;
+        loadHistory();
+    });
+
+    async function downloadModalExport(format) {
+        if (!lastModalPayload) {
+            showErr("No estimate payload is loaded.");
+            return;
+        }
+        const exportUrls = {
+            pdf: "/api/proposal",
+            docx: "/api/proposal/docx",
+            xlsx: "/api/proposal/xlsx"
+        };
+        const exportNames = {
+            pdf: "roof-material-estimate.pdf",
+            docx: "roof-material-estimate.docx",
+            xlsx: "roofing-material-order.xlsx"
+        };
+
+        let res;
+        try {
+            res = await fetch(exportUrls[format], {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(lastModalPayload)
+            });
+        } catch (e) {
+            showErr("Network error during download: " + String(e.message || e));
+            return;
+        }
+
+        const ct = res.headers.get("Content-Type") || "";
+        if (!res.ok) {
+            if (ct.includes("application/json")) {
+                const json = await res.json().catch(() => ({}));
+                showErr(json?.error?.message || "Export failed.");
+            } else {
+                showErr("Export failed. HTTP " + res.status);
+            }
+            return;
+        }
+
+        if (ct.includes("application/json")) {
+            const json = await res.json().catch(() => ({}));
+            showErr(json?.error?.message || "Server returned JSON instead of file.");
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = exportNames[format] || "download.bin";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        if (typeof window.showToast === "function") {
+            const label = format === "pdf" ? "PDF" : format === "docx" ? "Word" : "Excel";
+            window.showToast("success", label + " downloaded.");
+        }
+    }
+
+    modalExportPdf.addEventListener("click", () => downloadModalExport("pdf"));
+    modalExportDocx.addEventListener("click", () => downloadModalExport("docx"));
+    modalExportXlsx.addEventListener("click", () => downloadModalExport("xlsx"));
+
+    modalViewJson.addEventListener("click", () => {
+        const willShow = modalJsonPanel.hidden;
+        modalJsonPanel.hidden = !modalJsonPanel.hidden;
+        if (willShow) {
+            modalJsonPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    });
+
+    modalCopy.addEventListener("click", async () => {
+        const text = (lastModalJsonText || modalResultJson.textContent || "").trim();
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            const label = modalCopy.querySelector(".sr-only") || modalCopy.querySelector("span");
+            const prev = label ? label.textContent : "";
+            if (label) label.textContent = "Copied!";
+            setTimeout(() => {
+                if (label) label.textContent = prev;
+            }, 1500);
+            if (typeof window.showToast === "function") {
+                window.showToast("success", "Copied estimate JSON.");
+            }
+        } catch {
+            showErr("Could not copy to clipboard.");
+        }
+    });
+
+    // Each settings card tracks its own "dirty" state against a baseline snapshot
+    // captured on load/save, so its Save button only enables once that section's
+    // values actually differ from what's persisted.
+    const settingsBaselines = { margin: "", prices: "", geometry: "" };
+    const settingsGeometryInputs = [
+        setCustArea,
+        setCustPitchedArea,
+        setCustFlatArea,
+        setCustPitch,
+        setCustRidge,
+        setCustHip,
+        setCustValley,
+        setCustEave,
+        setCustRake
+    ];
+
+    function getMarginSnapshot() {
+        return String(setMargin.value);
+    }
+
+    function getPricesSnapshot() {
+        const obj = {};
+        priceFields.querySelectorAll("[data-price-key]").forEach((inp) => {
+            obj[inp.dataset.priceKey] = inp.value;
+        });
+        return JSON.stringify(obj);
+    }
+
+    function getGeometrySnapshot() {
+        return JSON.stringify(settingsGeometryInputs.map((inp) => inp.value));
+    }
+
+    function checkSettingsDirty(section) {
+        if (section === "margin") {
+            btnSaveMargin.disabled = getMarginSnapshot() === settingsBaselines.margin;
+        } else if (section === "prices") {
+            btnSavePrices.disabled = getPricesSnapshot() === settingsBaselines.prices;
+        } else if (section === "geometry") {
+            btnSaveGeometry.disabled = getGeometrySnapshot() === settingsBaselines.geometry;
+        }
+    }
+
+    setMargin.addEventListener("input", () => checkSettingsDirty("margin"));
+    settingsGeometryInputs.forEach((inp) => {
+        inp.addEventListener("input", () => checkSettingsDirty("geometry"));
+    });
+
+    async function loadSettings() {
+        const { ok, json } = await api("/api/admin/settings");
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load settings.");
+            return;
+        }
+        clearErr();
+        const s = json.settings;
+        setMargin.value = s.defaultMarginPercent;
+        setCustomerProfileFields(s.customerMeasurementProfile || null);
+        priceFields.innerHTML = "";
+        for (const key of Object.keys(s.materialPrices || {})) {
+            const lab = PRICE_LABELS[key] || key;
+            const wrap = document.createElement("div");
+            wrap.className = "settings-field";
+            wrap.innerHTML = `
+                <label>${escapeHtml(lab)} <span class="hint">(${escapeHtml(key)})</span></label>
+                <input type="number" min="0" step="0.01" data-price-key="${escapeAttr(key)}" value="${escapeAttr(String(s.materialPrices[key]))}" />
+            `;
+            priceFields.appendChild(wrap);
+        }
+        priceFields.querySelectorAll("[data-price-key]").forEach((inp) => {
+            inp.addEventListener("input", () => checkSettingsDirty("prices"));
+        });
+
+        settingsBaselines.margin = getMarginSnapshot();
+        settingsBaselines.prices = getPricesSnapshot();
+        settingsBaselines.geometry = getGeometrySnapshot();
+        btnSaveMargin.disabled = true;
+        btnSavePrices.disabled = true;
+        btnSaveGeometry.disabled = true;
+    }
+
+    settingsMarginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const r = await api("/api/admin/settings", {
+            method: "PUT",
+            body: JSON.stringify({ defaultMarginPercent: Number(setMargin.value) })
+        });
+        if (!r.ok || !r.json.success) {
+            const det = r.json.error?.details;
+            showErr(r.json.error?.message || (det && det.join("; ")) || "Save failed.");
+            return;
+        }
+        clearErr();
+        settingsBaselines.margin = getMarginSnapshot();
+        btnSaveMargin.disabled = true;
+    });
+
+    settingsPricesForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const materialPrices = {};
+        priceFields.querySelectorAll("[data-price-key]").forEach((inp) => {
+            materialPrices[inp.dataset.priceKey] = Number(inp.value);
+        });
+        const r = await api("/api/admin/settings", {
+            method: "PUT",
+            body: JSON.stringify({ materialPrices })
+        });
+        if (!r.ok || !r.json.success) {
+            const det = r.json.error?.details;
+            showErr(r.json.error?.message || (det && det.join("; ")) || "Save failed.");
+            return;
+        }
+        clearErr();
+        settingsBaselines.prices = getPricesSnapshot();
+        btnSavePrices.disabled = true;
+    });
+
+    settingsGeometryForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const customerMeasurementProfile = buildCustomerProfileFromFields();
+        const profileErrors = validateCustomerProfile(customerMeasurementProfile);
+        if (profileErrors.length) {
+            showErr("Customer measurement profile: " + profileErrors.join(" "));
+            return;
+        }
+        const r = await api("/api/admin/settings", {
+            method: "PUT",
+            body: JSON.stringify({ customerMeasurementProfile })
+        });
+        if (!r.ok || !r.json.success) {
+            const det = r.json.error?.details;
+            showErr(r.json.error?.message || (det && det.join("; ")) || "Save failed.");
+            return;
+        }
+        clearErr();
+        settingsBaselines.geometry = getGeometrySnapshot();
+        btnSaveGeometry.disabled = true;
+    });
+
+    function selectedMfrFilters() {
+        return {
+            roofType: mfrRoofType.value,
+            systemType: mfrSystemType.value,
+            category: (mfrCategoryFilter.value || "").trim()
+        };
+    }
+
+    const MANUFACTURER_GROUP_PLACEHOLDER_PRODUCT = "__MANUFACTURER_GROUP__";
+    const MANUFACTURER_GROUP_PLACEHOLDER_UNIT = "n/a";
+    const MANUFACTURER_GROUP_PLACEHOLDER_COVERAGE_VALUE = 0.0001;
+
+    let currentMfrModalMode = "addManufacturer";
+
+    function resetMfrForm() {
+        mfrId.value = "";
+        mfrFormRoofType.value = "pitched";
+        mfrFormSystemType.value = "";
+        mfrFormCategory.value = "";
+        mfrFormBrand.value = "";
+        if (mfrFormBrandSelect) {
+            mfrFormBrandSelect.value = "";
+            mfrFormBrandSelect.innerHTML = `<option value="">(select)</option>`;
+        }
+        mfrFormProduct.value = "";
+        mfrFormUnit.value = "";
+        mfrFormCoverageValue.value = "";
+        mfrFormCoverageBasis.value = "";
+        mfrFormComponentType.value = "";
+        mfrFormSortOrder.value = "0";
+        mfrFormIsActive.value = "true";
+    }
+
+    function openMfrModal(mode = "addManufacturer") {
+        currentMfrModalMode = mode;
+
+        const isEditProduct = mode === "editProduct";
+        const isAddProduct = mode === "addProduct";
+        const isAddManufacturer = mode === "addManufacturer";
+        const isEditManufacturer = mode === "editManufacturer";
+
+        mfrModalTitle.textContent = isEditProduct
+            ? "Edit product"
+            : isAddProduct
+              ? "Add product"
+              : isEditManufacturer
+                ? "Edit manufacturer"
+                : "Add manufacturer";
+        if (mfrFormSubmitBtnLabel) {
+            mfrFormSubmitBtnLabel.textContent = isEditProduct
+                ? "Save product"
+                : isAddProduct
+                  ? "Add product"
+                  : isEditManufacturer
+                    ? "Save manufacturer"
+                    : "Add manufacturer";
+        }
+
+        const enableProductFields = isEditProduct || isAddProduct;
+        if (mfrProductFields) mfrProductFields.style.display = enableProductFields ? "contents" : "none";
+
+        // Brand picker: only for product add.
+        const showBrandSelect = isAddProduct;
+        mfrFormBrandSelect.hidden = !showBrandSelect;
+        mfrFormBrandSelect.disabled = !showBrandSelect;
+        mfrFormBrandSelect.required = showBrandSelect;
+
+        mfrFormBrand.disabled = showBrandSelect;
+        mfrFormBrand.required = !showBrandSelect;
+        mfrFormBrand.style.display = showBrandSelect ? "none" : "";
+
+        mfrFormProduct.disabled = !enableProductFields;
+        mfrFormProduct.required = enableProductFields;
+
+        mfrFormUnit.disabled = !enableProductFields;
+        mfrFormUnit.required = enableProductFields;
+
+        mfrFormCoverageValue.disabled = !enableProductFields;
+        mfrFormCoverageValue.required = enableProductFields;
+
+        // Disable any remaining product-only inputs when hidden.
+        if (mfrProductFields) {
+            mfrProductFields.querySelectorAll("input,select").forEach((el) => {
+                el.disabled = !enableProductFields;
+            });
+        }
+
+        // When editing a manufacturer group that has no products yet,
+        // only allow editing Category + Brand (hide/disable Roof/System/Active and product fields).
+        if (mfrFormRoofTypeWrap) mfrFormRoofTypeWrap.style.display = isEditManufacturer ? "none" : "";
+        if (mfrFormSystemTypeWrap) mfrFormSystemTypeWrap.style.display = isEditManufacturer ? "none" : "";
+        if (mfrFormActiveWrap) mfrFormActiveWrap.style.display = isEditManufacturer ? "none" : "";
+
+        if (mfrFormRoofType) {
+            mfrFormRoofType.disabled = isEditManufacturer;
+            mfrFormRoofType.required = false;
+        }
+        if (mfrFormSystemType) {
+            mfrFormSystemType.disabled = isEditManufacturer;
+            mfrFormSystemType.required = false;
+        }
+        if (mfrFormIsActive) {
+            mfrFormIsActive.disabled = isEditManufacturer;
+        }
+
+        mfrEditModalBackdrop.classList.add("open");
+        mfrEditModalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeMfrModal() {
+        mfrEditModalBackdrop.classList.remove("open");
+        mfrEditModalBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    let pendingDeleteId = null;
+    let pendingDeleteKind = "product";
+    let pendingDeleteBrandMeta = null;
+    function openDeleteModal(id, label, kind = "product", brandMeta = null) {
+        pendingDeleteId = id;
+        pendingDeleteKind = kind;
+        pendingDeleteBrandMeta = brandMeta;
+        mfrDeleteText.textContent = `Delete "${label}"?`;
+        mfrDeleteModalBackdrop.classList.add("open");
+        mfrDeleteModalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDeleteModal() {
+        pendingDeleteId = null;
+        pendingDeleteKind = "product";
+        pendingDeleteBrandMeta = null;
+        mfrDeleteModalBackdrop.classList.remove("open");
+        mfrDeleteModalBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    function actionButtonsHtml(id) {
+        return `
+            <div style="display:flex;gap:6px;align-items:center;white-space:nowrap;">
+                <button type="button" class="tertiary action-btn-sm" data-edit-id="${id}" style="margin-top:0;"><i class="fa-solid fa-pen" aria-hidden="true"></i>Edit</button>
+                <button type="button" class="tertiary action-btn-sm" data-del-id="${id}" style="margin-top:0;"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>Delete</button>
+            </div>
+        `;
+    }
+
+    function editButtonHtml(id, editMode = "editProduct") {
+        return `
+            <div style="display:flex;gap:6px;align-items:center;white-space:nowrap;">
+                <button type="button" class="tertiary action-btn-sm" data-edit-id="${id}" data-edit-mode="${editMode}" style="margin-top:0;"><i class="fa-solid fa-pen" aria-hidden="true"></i>Edit</button>
+            </div>
+        `;
+    }
+
+    function deleteButtonHtml(id, label, kind = "product", brandMeta = null) {
+        const brandAttrs = brandMeta
+            ? ` data-del-roof-type="${escapeAttr(brandMeta.roofType || "")}" data-del-system-type="${escapeAttr(brandMeta.systemType || "")}" data-del-brand="${escapeAttr(brandMeta.brand || "")}"`
+            : "";
+        return `
+            <div style="display:flex;gap:6px;align-items:center;white-space:nowrap;">
+                <button
+                    type="button"
+                    class="tertiary action-btn-sm"
+                    data-del-id="${id ?? ""}"
+                    data-del-kind="${kind}"
+                    data-del-label="${escapeAttr(label)}"
+                    ${brandAttrs}
+                    style="margin-top:0;"
+                ><i class="fa-solid fa-trash-can" aria-hidden="true"></i>Delete</button>
+            </div>
+        `;
+    }
+
+    async function openMfrEditorById(id, editMode = "editProduct") {
+        const { ok, json } = await api("/api/admin/manufacturers/" + id);
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load manufacturer item.");
+            return;
+        }
+        const item = json.item;
+        mfrId.value = String(item.id);
+        mfrFormRoofType.value = item.roof_type;
+        mfrFormSystemType.value = item.system_type || "";
+        mfrFormCategory.value = item.category || "";
+        mfrFormBrand.value = item.brand || "";
+        mfrFormProduct.value = item.product || "";
+        mfrFormUnit.value = item.unit || "";
+        mfrFormCoverageValue.value = String(item.coverage_value ?? "");
+        mfrFormCoverageBasis.value = item.coverage_basis || "";
+        mfrFormComponentType.value = item.component_type || "";
+        mfrFormSortOrder.value = String(item.sort_order ?? 0);
+        mfrFormIsActive.value = item.is_active ? "true" : "false";
+        openMfrModal(editMode);
+    }
+
+    function bindActionButtons(scope = document) {
+        scope.querySelectorAll("[data-edit-id]").forEach((btn) => {
+            btn.addEventListener("click", async (ev) => {
+                ev.stopPropagation();
+                const id = Number(btn.dataset.editId);
+                const editMode = btn.dataset.editMode || "editProduct";
+                openMfrEditorById(id, editMode);
+            });
+        });
+        scope.querySelectorAll("[data-del-id]").forEach((btn) => {
+            btn.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                const kind = btn.dataset.delKind || "product";
+                const label = btn.dataset.delLabel || "this item";
+                if (kind === "brand") {
+                    openDeleteModal(null, label, kind, {
+                        roofType: btn.dataset.delRoofType || "",
+                        systemType: btn.dataset.delSystemType || "",
+                        brand: btn.dataset.delBrand || label
+                    });
+                    return;
+                }
+                const id = Number(btn.dataset.delId);
+                openDeleteModal(id, label, kind);
+            });
+        });
+    }
+
+    let cachedMfrGroupedItems = [];
+
+    function sortMfrProducts(products) {
+        return (products || []).slice().sort((a, b) => {
+            const s = Number(b.sort_order ?? 0) - Number(a.sort_order ?? 0);
+            if (s !== 0) return s;
+            const byProduct = String(b.product || "").localeCompare(String(a.product || ""), undefined, { sensitivity: "base" });
+            if (byProduct !== 0) return byProduct;
+            return String(b.unit || "").localeCompare(String(a.unit || ""), undefined, { sensitivity: "base" });
+        });
+    }
+
+    function aggregateGroupedByBrand(groupedItems) {
+        const map = new Map();
+        for (const group of groupedItems) {
+            const key = [group.roofType || "", group.systemType || "", group.brand || ""].join("|");
+            if (!map.has(key)) {
+                map.set(key, {
+                    roofType: group.roofType || null,
+                    systemType: group.systemType || null,
+                    brand: group.brand || "",
+                    categories: []
+                });
+            }
+            map.get(key).categories.push({
+                category: group.category || "",
+                products: sortMfrProducts(group.products),
+                placeholderProductId: group.placeholderProductId ?? null
+            });
+        }
+        return Array.from(map.values()).map((brandGroup) => {
+            brandGroup.categories.sort((a, b) =>
+                String(a.category || "").localeCompare(String(b.category || ""), undefined, { sensitivity: "base" })
+            );
+            return brandGroup;
+        });
+    }
+
+    function brandGroupMatchesSearch(brandGroup, searchTerm) {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        if (String(brandGroup.brand || "").toLowerCase().includes(term)) return true;
+        for (const cat of brandGroup.categories || []) {
+            if (String(cat.category || "").toLowerCase().includes(term)) return true;
+            for (const product of cat.products || []) {
+                if (String(product.product || "").toLowerCase().includes(term)) return true;
+                if (String(product.unit || "").toLowerCase().includes(term)) return true;
+            }
+        }
+        return false;
+    }
+
+    function renderMfrProductRows(products) {
+        const rows = (products || [])
+            .map(
+                (p) => `
+                    <tr class="mfr-product-row" data-edit-id="${p.id}">
+                        <td>${escapeHtml(p.product)}</td>
+                        <td>${escapeHtml(p.unit)}</td>
+                        <td>${escapeHtml(p.coverage_value)}</td>
+                        <td class="mfr-product-active">${p.is_active ? "Yes" : "No"}</td>
+                        <td class="mfr-detail-actions">${editButtonHtml(p.id)}</td>
+                    </tr>
+                `
+            )
+            .join("");
+        return rows || `<tr><td colspan="5" class="hint">No products yet.</td></tr>`;
+    }
+
+    function renderMfrCategoryTabs(categories, activeIndex) {
+        return (categories || [])
+            .map(
+                (cat, index) => `
+                    <button
+                        type="button"
+                        class="mfr-category-tab${index === activeIndex ? " active" : ""}"
+                        role="tab"
+                        aria-selected="${index === activeIndex ? "true" : "false"}"
+                        data-category-index="${index}"
+                    >${escapeHtml(cat.category || "(uncategorized)")}</button>
+                `
+            )
+            .join("");
+    }
+
+    function bindMfrCategoryTabs(rowEl, brandGroup) {
+        const tabs = rowEl.querySelectorAll(".mfr-category-tab");
+        const tbody = rowEl.querySelector(".mfr-detail-table tbody");
+        if (!tabs.length || !tbody) return;
+
+        tabs.forEach((tab) => {
+            tab.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                const index = Number(tab.dataset.categoryIndex);
+                if (!Number.isFinite(index)) return;
+                tabs.forEach((t) => {
+                    const active = t === tab;
+                    t.classList.toggle("active", active);
+                    t.setAttribute("aria-selected", active ? "true" : "false");
+                });
+                const category = brandGroup.categories[index];
+                tbody.innerHTML = renderMfrProductRows(category?.products || []);
+                bindActionButtons(tbody);
+                tbody.querySelectorAll(".mfr-product-row").forEach((productRow) => {
+                    productRow.addEventListener("click", (clickEv) => {
+                        clickEv.stopPropagation();
+                        openMfrEditorById(Number(productRow.dataset.editId));
+                    });
+                });
+            });
+        });
+    }
+
+    function initialMfrCategoryIndex(categories) {
+        const filterCategory = (mfrCategoryFilter?.value || "").trim();
+        if (filterCategory) {
+            const idx = categories.findIndex((cat) => String(cat.category || "") === filterCategory);
+            if (idx >= 0) return idx;
+        }
+        return 0;
+    }
+
+    let mfrPage = 1;
+    const MFR_PAGE_SIZE = 8;
+
+    function renderManufacturersTable() {
+        mfrBody.innerHTML = "";
+        const searchTerm = (mfrSearch?.value || "").trim();
+        const filterCategory = (mfrCategoryFilter?.value || "").trim();
+        let brandGroups = aggregateGroupedByBrand(cachedMfrGroupedItems);
+        if (filterCategory) {
+            brandGroups = brandGroups.filter((group) =>
+                group.categories.some((cat) => String(cat.category || "") === filterCategory)
+            );
+        }
+        brandGroups = brandGroups.filter((group) => brandGroupMatchesSearch(group, searchTerm));
+        const cmpDescStr = (a, b) => String(a || "").localeCompare(String(b || ""), undefined, { sensitivity: "base" }) * -1;
+        brandGroups.sort((ga, gb) => cmpDescStr(ga.brand, gb.brand));
+
+        if (!brandGroups.length) {
+            mfrBody.innerHTML = `<tr><td colspan="3" class="hint">No manufacturers match the current filters.</td></tr>`;
+            renderPagination(mfrPagination, { page: 1, pageSize: MFR_PAGE_SIZE, total: 0, onPageChange: () => {} });
+            return;
+        }
+
+        const totalPages = Math.max(1, Math.ceil(brandGroups.length / MFR_PAGE_SIZE));
+        if (mfrPage > totalPages) mfrPage = totalPages;
+        const pageGroups = brandGroups.slice((mfrPage - 1) * MFR_PAGE_SIZE, mfrPage * MFR_PAGE_SIZE);
+
+        for (const brandGroup of pageGroups) {
+            const activeCategoryIndex = initialMfrCategoryIndex(brandGroup.categories);
+            const activeCategory = brandGroup.categories[activeCategoryIndex] || brandGroup.categories[0];
+            const productsSorted = activeCategory?.products || [];
+            const placeholderOnlyCategory = brandGroup.categories.find(
+                (cat) => !cat.products?.length && cat.placeholderProductId
+            );
+            const showManufacturerEdit = !!placeholderOnlyCategory;
+            const brandMeta = {
+                roofType: brandGroup.roofType || "",
+                systemType: brandGroup.systemType || "",
+                brand: brandGroup.brand || ""
+            };
+
+            const tr = document.createElement("tr");
+            tr.className = "mfr-group-row";
+            tr.innerHTML = `
+                <td>
+                    <div class="mfr-cell-strong">${escapeHtml(brandGroup.brand)}</div>
+                </td>
+                <td>
+                    <div class="mfr-category-tabs-wrap">
+                        <div class="mfr-category-tabs" role="tablist">
+                            ${renderMfrCategoryTabs(brandGroup.categories, activeCategoryIndex)}
+                        </div>
+                    </div>
+                    <table class="history-table mfr-detail-table" style="margin-top:8px;">
+                        <thead><tr><th>Product</th><th>Unit</th><th>Coverage</th><th>Active</th><th>Action</th></tr></thead>
+                        <tbody>${renderMfrProductRows(productsSorted)}</tbody>
+                    </table>
+                </td>
+                <td>
+                    ${
+                        showManufacturerEdit && placeholderOnlyCategory?.placeholderProductId
+                            ? `
+                                <div class="mfr-group-actions-inline">
+                                    <button
+                                        type="button"
+                                        class="tertiary mfr-actions-small"
+                                        data-edit-id="${placeholderOnlyCategory.placeholderProductId}"
+                                        data-edit-mode="editManufacturer"
+                                        style="margin-top:0;"
+                                    ><i class="fa-solid fa-pen" aria-hidden="true"></i>Edit</button>
+                                    ${deleteButtonHtml(null, brandGroup.brand, "brand", brandMeta)}
+                                </div>
+                            `
+                            : deleteButtonHtml(null, brandGroup.brand, "brand", brandMeta)
+                    }
+                </td>
+            `;
+            mfrBody.appendChild(tr);
+            bindMfrCategoryTabs(tr, brandGroup);
+        }
+
+        bindActionButtons(mfrBody);
+        mfrBody.querySelectorAll(".mfr-product-row").forEach((row) => {
+            row.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                openMfrEditorById(Number(row.dataset.editId));
+            });
+        });
+
+        renderPagination(mfrPagination, {
+            page: mfrPage,
+            pageSize: MFR_PAGE_SIZE,
+            total: brandGroups.length,
+            onPageChange: (p) => {
+                mfrPage = p;
+                renderManufacturersTable();
+            }
+        });
+    }
+
+    async function loadManufacturers() {
+        const f = selectedMfrFilters();
+        const q = new URLSearchParams();
+        if (f.roofType) q.set("roofType", f.roofType);
+        if (f.systemType) q.set("systemType", f.systemType);
+        const { ok, json } = await api("/api/admin/manufacturers/grouped?" + q.toString());
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load manufacturer items.");
+            return;
+        }
+        clearErr();
+        cachedMfrGroupedItems = json.items || [];
+        mfrPage = 1;
+        renderManufacturersTable();
+        refreshMfrFilterBadges();
+    }
+
+    async function loadBrandOptionsForProductModal() {
+        if (currentMfrModalMode !== "addProduct") return;
+
+        const category = (mfrFormCategory.value || "").trim();
+        if (!category) {
+            mfrFormBrandSelect.innerHTML = `<option value="">(select)</option>`;
+            return;
+        }
+
+        const q = new URLSearchParams();
+        if (mfrFormRoofType.value) q.set("roofType", mfrFormRoofType.value);
+        const sys = (mfrFormSystemType.value || "").trim();
+        if (sys) q.set("systemType", sys);
+
+        const { ok, json } = await api("/api/admin/manufacturers/grouped?" + q.toString());
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load brands.");
+            return;
+        }
+
+        const brands = new Set();
+        for (const group of json.items || []) {
+            if (String(group.category || "") !== category) continue;
+            if (group.brand) brands.add(String(group.brand));
+        }
+
+        const brandsArr = Array.from(brands)
+            .filter((b) => b.trim().length > 0)
+            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+        mfrFormBrandSelect.innerHTML = `<option value="">(select)</option>`;
+        for (const b of brandsArr) {
+            const opt = document.createElement("option");
+            opt.value = b;
+            opt.textContent = b;
+            mfrFormBrandSelect.appendChild(opt);
+        }
+        if (brandsArr.length === 1) {
+            mfrFormBrandSelect.value = brandsArr[0];
+        }
+    }
+
+    mfrFormCategory.addEventListener("change", () => {
+        if (currentMfrModalMode === "addProduct") void loadBrandOptionsForProductModal();
+    });
+    mfrFormRoofType.addEventListener("change", () => {
+        if (currentMfrModalMode === "addProduct") void loadBrandOptionsForProductModal();
+    });
+    mfrFormSystemType.addEventListener("change", () => {
+        if (currentMfrModalMode === "addProduct") void loadBrandOptionsForProductModal();
+    });
+
+    const mfrFilterDropdownCtl = setupFilterDropdown(btnMfrFilterToggle, mfrFilterDropdown);
+    btnLoadMfr.addEventListener("click", () => {
+        loadManufacturers();
+        mfrFilterDropdownCtl.close();
+    });
+    btnRefreshMfr.addEventListener("click", loadManufacturers);
+    if (mfrCategoryFilter) {
+        mfrCategoryFilter.addEventListener("change", () => {
+            mfrPage = 1;
+            if (cachedMfrGroupedItems.length) renderManufacturersTable();
+            refreshMfrFilterBadges();
+        });
+    }
+    if (mfrSearch) {
+        let mfrSearchTimer = null;
+        mfrSearch.addEventListener("input", () => {
+            clearTimeout(mfrSearchTimer);
+            mfrSearchTimer = setTimeout(() => {
+                mfrPage = 1;
+                if (cachedMfrGroupedItems.length) renderManufacturersTable();
+            }, 200);
+        });
+        mfrSearch.addEventListener("search", () => {
+            mfrPage = 1;
+            if (cachedMfrGroupedItems.length) renderManufacturersTable();
+        });
+    }
+    btnAddManufacturer.addEventListener("click", () => {
+        resetMfrForm();
+        openMfrModal("addManufacturer");
+    });
+    function firstMfrCategoryValue() {
+        const opt = Array.from(mfrFormCategory.options).find((o) => String(o.value || "").trim() !== "");
+        return opt ? opt.value : "";
+    }
+
+    const PRODUCT_IMPORT_HEADERS = [
+        "roofType",
+        "systemType",
+        "category",
+        "brand",
+        "product",
+        "unit",
+        "coverageValue",
+        "coverageBasis",
+        "componentType",
+        "sortOrder",
+        "isActive"
+    ];
+    const PRODUCT_IMPORT_EXAMPLE_ROW = {
+        roofType: "pitched",
+        systemType: "",
+        category: "Shingles",
+        brand: "GAF",
+        product: "Timberline HDZ",
+        unit: "bundles",
+        coverageValue: "33.3",
+        coverageBasis: "sq ft per bundle",
+        componentType: "",
+        sortOrder: "0",
+        isActive: "true"
+    };
+
+    const productImportModalBackdrop = document.getElementById("productImportModalBackdrop");
+    const productImportModalClose = document.getElementById("productImportModalClose");
+    const productImportDropzone = document.getElementById("productImportDropzone");
+    const productImportFileInput = document.getElementById("productImportFileInput");
+    const productImportFileList = document.getElementById("productImportFileList");
+    const btnImportProducts = document.getElementById("btnImportProducts");
+    const btnDownloadImportTemplate = document.getElementById("btnDownloadImportTemplate");
+    const btnRunProductImport = document.getElementById("btnRunProductImport");
+    const btnRunProductImportLabel = document.getElementById("btnRunProductImportLabel");
+
+    /** @type {Array<{ id: string, file: File, status: 'validating'|'valid'|'invalid', headerError: string|null }>} */
+    let productImportEntries = [];
+    let productImportBusy = false;
+    let productImportValidateSeq = 0;
+
+    function productImportFileKey(file) {
+        return `${file.name}|${file.size}|${file.lastModified}`;
+    }
+
+    function formatFileSize(bytes) {
+        const n = Number(bytes);
+        if (!Number.isFinite(n) || n < 0) return "—";
+        if (n < 1024) return `${n} B`;
+        if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
+        return `${(n / (1024 * 1024)).toFixed(n < 10 * 1024 * 1024 ? 1 : 0)} MB`;
+    }
+
+    function isAllowedImportFile(file) {
+        const name = String(file?.name || "").toLowerCase();
+        return name.endsWith(".csv") || name.endsWith(".xlsx") || name.endsWith(".xls");
+    }
+
+    function allProductImportFilesValid() {
+        return (
+            productImportEntries.length > 0 &&
+            productImportEntries.every((e) => e.status === "valid")
+        );
+    }
+
+    function syncProductImportButton() {
+        if (!btnRunProductImport) return;
+        btnRunProductImport.disabled =
+            productImportBusy || !allProductImportFilesValid();
+    }
+
+    function renderProductImportFileList() {
+        if (!productImportFileList) return;
+        if (!productImportEntries.length) {
+            productImportFileList.hidden = true;
+            productImportFileList.innerHTML = "";
+            syncProductImportButton();
+            return;
+        }
+        productImportFileList.hidden = false;
+        productImportFileList.innerHTML = productImportEntries
+            .map((entry, idx) => {
+                const statusClass =
+                    entry.status === "invalid"
+                        ? "is-invalid"
+                        : entry.status === "valid"
+                          ? "is-valid"
+                          : "is-validating";
+                if (entry.status === "validating") {
+                    return `
+                <li class="product-import-file-card ${statusClass}" data-entry-id="${escapeAttr(entry.id)}">
+                    <div class="product-import-file-main product-import-file-main--loading">
+                        <div class="product-import-loader" aria-hidden="true">
+                            <span class="product-import-loader-ring"></span>
+                        </div>
+                        <div class="product-import-file-meta">
+                            <div class="product-import-file-name" title="${escapeAttr(entry.file.name)}">${escapeHtml(entry.file.name)}</div>
+                            <div class="product-import-file-sub">
+                                <span class="product-import-file-size">${escapeHtml(formatFileSize(entry.file.size))}</span>
+                                <span class="product-import-file-status">Validating columns…</span>
+                            </div>
+                            <div class="product-import-loader-bar" aria-hidden="true"><span></span></div>
+                        </div>
+                        <button type="button" class="product-import-file-remove" data-remove-import-idx="${idx}" aria-label="Remove ${escapeAttr(entry.file.name)}" title="Remove">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </li>
+            `;
+                }
+                const statusLabel =
+                    entry.status === "valid" ? "Columns match" : "Column mismatch";
+                const errorHtml = entry.headerError
+                    ? `<div class="product-import-file-error" role="alert">${escapeHtml(entry.headerError)}</div>`
+                    : "";
+                return `
+                <li class="product-import-file-card ${statusClass}" data-entry-id="${escapeAttr(entry.id)}">
+                    <div class="product-import-file-main">
+                        <div class="product-import-file-icon" aria-hidden="true"><i class="fa-regular fa-file-lines"></i></div>
+                        <div class="product-import-file-meta">
+                            <div class="product-import-file-name" title="${escapeAttr(entry.file.name)}">${escapeHtml(entry.file.name)}</div>
+                            <div class="product-import-file-sub">
+                                <span class="product-import-file-size">${escapeHtml(formatFileSize(entry.file.size))}</span>
+                                <span class="product-import-file-status">${escapeHtml(statusLabel)}</span>
+                            </div>
+                            ${errorHtml}
+                        </div>
+                        <button type="button" class="product-import-file-remove" data-remove-import-idx="${idx}" aria-label="Remove ${escapeAttr(entry.file.name)}" title="Remove">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </li>
+            `;
+            })
+            .join("");
+        productImportFileList.querySelectorAll("[data-remove-import-idx]").forEach((btn) => {
+            btn.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                const idx = Number(btn.dataset.removeImportIdx);
+                if (!Number.isFinite(idx)) return;
+                productImportEntries.splice(idx, 1);
+                renderProductImportFileList();
+            });
+        });
+        syncProductImportButton();
+    }
+
+    async function validateProductImportEntries(entries) {
+        if (!entries.length) return;
+        const seq = ++productImportValidateSeq;
+        const form = new FormData();
+        for (const entry of entries) {
+            form.append("files", entry.file, entry.file.name);
+        }
+        try {
+            const { ok, json } = await api("/api/admin/manufacturers/import/validate", {
+                method: "POST",
+                body: form
+            });
+            if (seq !== productImportValidateSeq) return;
+            const results = ok && json.success && Array.isArray(json.files) ? json.files : null;
+            if (!results) {
+                const msg = json.error?.message || "Could not validate file columns.";
+                for (const entry of entries) {
+                    const live = productImportEntries.find((e) => e.id === entry.id);
+                    if (!live) continue;
+                    live.status = "invalid";
+                    live.headerError = msg;
+                }
+            } else {
+                const byName = new Map(results.map((r) => [r.fileName, r]));
+                for (const entry of entries) {
+                    const live = productImportEntries.find((e) => e.id === entry.id);
+                    if (!live) continue;
+                    const result = byName.get(entry.file.name) || results[entries.indexOf(entry)];
+                    if (result && result.ok) {
+                        live.status = "valid";
+                        live.headerError = null;
+                    } else {
+                        live.status = "invalid";
+                        live.headerError =
+                            result?.headerError ||
+                            "Column headers do not match the required import format.";
+                    }
+                }
+            }
+        } catch (e) {
+            if (seq !== productImportValidateSeq) return;
+            for (const entry of entries) {
+                const live = productImportEntries.find((e) => e.id === entry.id);
+                if (!live) continue;
+                live.status = "invalid";
+                live.headerError = e?.message || "Could not validate file columns.";
+            }
+        }
+        renderProductImportFileList();
+    }
+
+    function addProductImportFiles(fileList) {
+        const incoming = Array.from(fileList || []).filter(isAllowedImportFile);
+        if (!incoming.length) {
+            if (typeof window.showToast === "function") {
+                window.showToast("error", "Only CSV and Excel (.xlsx, .xls) files are allowed.");
+            }
+            return;
+        }
+        const existing = new Set(productImportEntries.map((e) => productImportFileKey(e.file)));
+        const added = [];
+        for (const f of incoming) {
+            const key = productImportFileKey(f);
+            if (existing.has(key)) continue;
+            existing.add(key);
+            const entry = {
+                id: `${key}|${Date.now()}|${Math.random().toString(36).slice(2, 8)}`,
+                file: f,
+                status: "validating",
+                headerError: null
+            };
+            productImportEntries.push(entry);
+            added.push(entry);
+        }
+        if (productImportEntries.length > 10) {
+            productImportEntries = productImportEntries.slice(0, 10);
+            if (typeof window.showToast === "function") {
+                window.showToast("error", "Maximum 10 files per import.");
+            }
+        }
+        renderProductImportFileList();
+        const toValidate = added.filter((e) => productImportEntries.some((x) => x.id === e.id));
+        if (toValidate.length) void validateProductImportEntries(toValidate);
+    }
+
+    function openProductImportModal() {
+        productImportEntries = [];
+        productImportValidateSeq += 1;
+        renderProductImportFileList();
+        if (productImportFileInput) productImportFileInput.value = "";
+        productImportModalBackdrop.classList.add("open");
+        productImportModalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeProductImportModal() {
+        if (productImportBusy) return;
+        productImportValidateSeq += 1;
+        productImportModalBackdrop.classList.remove("open");
+        productImportModalBackdrop.setAttribute("aria-hidden", "true");
+        productImportEntries = [];
+        renderProductImportFileList();
+        if (productImportFileInput) productImportFileInput.value = "";
+    }
+
+    function csvEscapeCell(value) {
+        const s = value == null ? "" : String(value);
+        if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+        return s;
+    }
+
+    function downloadProductImportTemplate() {
+        const header = PRODUCT_IMPORT_HEADERS.join(",");
+        const example = PRODUCT_IMPORT_HEADERS.map((h) => csvEscapeCell(PRODUCT_IMPORT_EXAMPLE_ROW[h] ?? "")).join(",");
+        const blob = new Blob([`${header}\r\n${example}\r\n`], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "product-import-template.csv";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        if (typeof window.showToast === "function") {
+            window.showToast("success", "CSV format file downloaded.");
+        }
+    }
+
+    function downloadFailedImportCsv(failedRows) {
+        if (!Array.isArray(failedRows) || !failedRows.length) return;
+        const cols = ["sourceFile", "rowNumber", ...PRODUCT_IMPORT_HEADERS, "reason"];
+        const lines = [cols.join(",")];
+        for (const row of failedRows) {
+            lines.push(cols.map((c) => csvEscapeCell(row[c])).join(","));
+        }
+        const blob = new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "product-import-failures.csv";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function setProductImportLoading(busy) {
+        productImportBusy = busy;
+        if (btnRunProductImportLabel) {
+            btnRunProductImportLabel.textContent = busy ? "Importing…" : "Import";
+        }
+        if (btnRunProductImport) {
+            btnRunProductImport.classList.toggle("is-loading", busy);
+        }
+        syncProductImportButton();
+    }
+
+    async function runProductImport() {
+        if (productImportBusy || !allProductImportFilesValid()) return;
+        const validFiles = productImportEntries.filter((e) => e.status === "valid").map((e) => e.file);
+        if (!validFiles.length) return;
+        setProductImportLoading(true);
+        clearErr();
+        try {
+            const form = new FormData();
+            for (const f of validFiles) {
+                form.append("files", f, f.name);
+            }
+            const { ok, json } = await api("/api/admin/manufacturers/import", {
+                method: "POST",
+                body: form
+            });
+            if (!ok || !json.success) {
+                showErr(json.error?.message || "Import failed.");
+                return;
+            }
+
+            const data = json;
+            const failedRows = Array.isArray(data.failedRows) ? data.failedRows : [];
+            const importedCount = Number(data.importedCount || 0);
+            const fileSummaries = Array.isArray(data.files) ? data.files : [];
+            const headerErrors = fileSummaries
+                .filter((f) => f.headerError)
+                .map((f) => `${f.fileName}: ${f.headerError}`);
+
+            if (failedRows.length) {
+                downloadFailedImportCsv(failedRows);
+            }
+
+            await Promise.all([loadProducts(), loadManufacturers()]);
+
+            if (headerErrors.length) {
+                showErr(headerErrors.join(" "));
+            }
+
+            if (typeof window.showToast === "function") {
+                const skipped = failedRows.length;
+                let msg = `Imported ${importedCount} product${importedCount === 1 ? "" : "s"}.`;
+                if (skipped) msg += ` ${skipped} row${skipped === 1 ? "" : "s"} failed (CSV downloaded).`;
+                if (headerErrors.length) msg += ` ${headerErrors.length} file${headerErrors.length === 1 ? "" : "s"} rejected for header mismatch.`;
+                const toastType = importedCount > 0 || (!skipped && !headerErrors.length) ? "success" : "error";
+                window.showToast(toastType, msg);
+            }
+
+            if (!failedRows.length && !headerErrors.length) {
+                productImportEntries = [];
+                renderProductImportFileList();
+                if (productImportFileInput) productImportFileInput.value = "";
+                productImportBusy = false;
+                closeProductImportModal();
+            } else {
+                productImportEntries = [];
+                renderProductImportFileList();
+                if (productImportFileInput) productImportFileInput.value = "";
+            }
+        } catch (e) {
+            showErr(e?.message || "Import failed.");
+        } finally {
+            setProductImportLoading(false);
+        }
+    }
+
+    if (btnImportProducts) {
+        btnImportProducts.addEventListener("click", openProductImportModal);
+    }
+    if (productImportModalClose) {
+        productImportModalClose.addEventListener("click", closeProductImportModal);
+    }
+    if (productImportModalBackdrop) {
+        productImportModalBackdrop.addEventListener("click", (e) => {
+            if (e.target === productImportModalBackdrop) closeProductImportModal();
+        });
+    }
+    if (btnDownloadImportTemplate) {
+        btnDownloadImportTemplate.addEventListener("click", downloadProductImportTemplate);
+    }
+    if (productImportDropzone && productImportFileInput) {
+        productImportDropzone.addEventListener("click", () => productImportFileInput.click());
+        productImportDropzone.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                productImportFileInput.click();
+            }
+        });
+        productImportFileInput.addEventListener("change", () => {
+            addProductImportFiles(productImportFileInput.files);
+            productImportFileInput.value = "";
+        });
+        ["dragenter", "dragover"].forEach((evt) => {
+            productImportDropzone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                productImportDropzone.classList.add("is-dragover");
+            });
+        });
+        ["dragleave", "drop"].forEach((evt) => {
+            productImportDropzone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                productImportDropzone.classList.remove("is-dragover");
+            });
+        });
+        productImportDropzone.addEventListener("drop", (e) => {
+            addProductImportFiles(e.dataTransfer?.files);
+        });
+    }
+    if (btnRunProductImport) {
+        btnRunProductImport.addEventListener("click", () => {
+            void runProductImport();
+        });
+    }
+
+    const MANUFACTURER_IMPORT_HEADERS = ["roofType", "systemType", "category", "brand", "isActive"];
+    const MANUFACTURER_IMPORT_EXAMPLE_ROW = {
+        roofType: "pitched",
+        systemType: "",
+        category: "Shingles",
+        brand: "GAF",
+        isActive: "true"
+    };
+
+    const manufacturerImportModalBackdrop = document.getElementById("manufacturerImportModalBackdrop");
+    const manufacturerImportModalClose = document.getElementById("manufacturerImportModalClose");
+    const manufacturerImportDropzone = document.getElementById("manufacturerImportDropzone");
+    const manufacturerImportFileInput = document.getElementById("manufacturerImportFileInput");
+    const manufacturerImportFileList = document.getElementById("manufacturerImportFileList");
+    const btnImportManufacturers = document.getElementById("btnImportManufacturers");
+    const btnDownloadManufacturerImportTemplate = document.getElementById("btnDownloadManufacturerImportTemplate");
+    const btnRunManufacturerImport = document.getElementById("btnRunManufacturerImport");
+    const btnRunManufacturerImportLabel = document.getElementById("btnRunManufacturerImportLabel");
+
+    /** @type {Array<{ id: string, file: File, status: 'validating'|'valid'|'invalid', headerError: string|null }>} */
+    let manufacturerImportEntries = [];
+    let manufacturerImportBusy = false;
+    let manufacturerImportValidateSeq = 0;
+
+    function allManufacturerImportFilesValid() {
+        return (
+            manufacturerImportEntries.length > 0 &&
+            manufacturerImportEntries.every((e) => e.status === "valid")
+        );
+    }
+
+    function syncManufacturerImportButton() {
+        if (!btnRunManufacturerImport) return;
+        btnRunManufacturerImport.disabled =
+            manufacturerImportBusy || !allManufacturerImportFilesValid();
+    }
+
+    function renderManufacturerImportFileList() {
+        if (!manufacturerImportFileList) return;
+        if (!manufacturerImportEntries.length) {
+            manufacturerImportFileList.hidden = true;
+            manufacturerImportFileList.innerHTML = "";
+            syncManufacturerImportButton();
+            return;
+        }
+        manufacturerImportFileList.hidden = false;
+        manufacturerImportFileList.innerHTML = manufacturerImportEntries
+            .map((entry, idx) => {
+                const statusClass =
+                    entry.status === "invalid"
+                        ? "is-invalid"
+                        : entry.status === "valid"
+                          ? "is-valid"
+                          : "is-validating";
+                if (entry.status === "validating") {
+                    return `
+                <li class="product-import-file-card ${statusClass}" data-entry-id="${escapeAttr(entry.id)}">
+                    <div class="product-import-file-main product-import-file-main--loading">
+                        <div class="product-import-loader" aria-hidden="true">
+                            <span class="product-import-loader-ring"></span>
+                        </div>
+                        <div class="product-import-file-meta">
+                            <div class="product-import-file-name" title="${escapeAttr(entry.file.name)}">${escapeHtml(entry.file.name)}</div>
+                            <div class="product-import-file-sub">
+                                <span class="product-import-file-size">${escapeHtml(formatFileSize(entry.file.size))}</span>
+                                <span class="product-import-file-status">Validating columns…</span>
+                            </div>
+                            <div class="product-import-loader-bar" aria-hidden="true"><span></span></div>
+                        </div>
+                        <button type="button" class="product-import-file-remove" data-remove-mfr-import-idx="${idx}" aria-label="Remove ${escapeAttr(entry.file.name)}" title="Remove">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </li>
+            `;
+                }
+                const statusLabel =
+                    entry.status === "valid" ? "Columns match" : "Column mismatch";
+                const errorHtml = entry.headerError
+                    ? `<div class="product-import-file-error" role="alert">${escapeHtml(entry.headerError)}</div>`
+                    : "";
+                return `
+                <li class="product-import-file-card ${statusClass}" data-entry-id="${escapeAttr(entry.id)}">
+                    <div class="product-import-file-main">
+                        <div class="product-import-file-icon" aria-hidden="true"><i class="fa-regular fa-file-lines"></i></div>
+                        <div class="product-import-file-meta">
+                            <div class="product-import-file-name" title="${escapeAttr(entry.file.name)}">${escapeHtml(entry.file.name)}</div>
+                            <div class="product-import-file-sub">
+                                <span class="product-import-file-size">${escapeHtml(formatFileSize(entry.file.size))}</span>
+                                <span class="product-import-file-status">${escapeHtml(statusLabel)}</span>
+                            </div>
+                            ${errorHtml}
+                        </div>
+                        <button type="button" class="product-import-file-remove" data-remove-mfr-import-idx="${idx}" aria-label="Remove ${escapeAttr(entry.file.name)}" title="Remove">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </li>
+            `;
+            })
+            .join("");
+        manufacturerImportFileList.querySelectorAll("[data-remove-mfr-import-idx]").forEach((btn) => {
+            btn.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                const idx = Number(btn.dataset.removeMfrImportIdx);
+                if (!Number.isFinite(idx)) return;
+                manufacturerImportEntries.splice(idx, 1);
+                renderManufacturerImportFileList();
+            });
+        });
+        syncManufacturerImportButton();
+    }
+
+    async function validateManufacturerImportEntries(entries) {
+        if (!entries.length) return;
+        const seq = ++manufacturerImportValidateSeq;
+        const form = new FormData();
+        for (const entry of entries) {
+            form.append("files", entry.file, entry.file.name);
+        }
+        try {
+            const { ok, json } = await api("/api/admin/manufacturers/import-brands/validate", {
+                method: "POST",
+                body: form
+            });
+            if (seq !== manufacturerImportValidateSeq) return;
+            const results = ok && json.success && Array.isArray(json.files) ? json.files : null;
+            if (!results) {
+                const msg = json.error?.message || "Could not validate file columns.";
+                for (const entry of entries) {
+                    const live = manufacturerImportEntries.find((e) => e.id === entry.id);
+                    if (!live) continue;
+                    live.status = "invalid";
+                    live.headerError = msg;
+                }
+            } else {
+                const byName = new Map(results.map((r) => [r.fileName, r]));
+                for (const entry of entries) {
+                    const live = manufacturerImportEntries.find((e) => e.id === entry.id);
+                    if (!live) continue;
+                    const result = byName.get(entry.file.name) || results[entries.indexOf(entry)];
+                    if (result && result.ok) {
+                        live.status = "valid";
+                        live.headerError = null;
+                    } else {
+                        live.status = "invalid";
+                        live.headerError =
+                            result?.headerError ||
+                            "Column headers do not match the required import format.";
+                    }
+                }
+            }
+        } catch (e) {
+            if (seq !== manufacturerImportValidateSeq) return;
+            for (const entry of entries) {
+                const live = manufacturerImportEntries.find((e) => e.id === entry.id);
+                if (!live) continue;
+                live.status = "invalid";
+                live.headerError = e?.message || "Could not validate file columns.";
+            }
+        }
+        renderManufacturerImportFileList();
+    }
+
+    function addManufacturerImportFiles(fileList) {
+        const incoming = Array.from(fileList || []).filter(isAllowedImportFile);
+        if (!incoming.length) {
+            if (typeof window.showToast === "function") {
+                window.showToast("error", "Only CSV and Excel (.xlsx, .xls) files are allowed.");
+            }
+            return;
+        }
+        const existing = new Set(manufacturerImportEntries.map((e) => productImportFileKey(e.file)));
+        const added = [];
+        for (const f of incoming) {
+            const key = productImportFileKey(f);
+            if (existing.has(key)) continue;
+            existing.add(key);
+            const entry = {
+                id: `${key}|${Date.now()}|${Math.random().toString(36).slice(2, 8)}`,
+                file: f,
+                status: "validating",
+                headerError: null
+            };
+            manufacturerImportEntries.push(entry);
+            added.push(entry);
+        }
+        if (manufacturerImportEntries.length > 10) {
+            manufacturerImportEntries = manufacturerImportEntries.slice(0, 10);
+            if (typeof window.showToast === "function") {
+                window.showToast("error", "Maximum 10 files per import.");
+            }
+        }
+        renderManufacturerImportFileList();
+        const toValidate = added.filter((e) => manufacturerImportEntries.some((x) => x.id === e.id));
+        if (toValidate.length) void validateManufacturerImportEntries(toValidate);
+    }
+
+    function openManufacturerImportModal() {
+        manufacturerImportEntries = [];
+        manufacturerImportValidateSeq += 1;
+        renderManufacturerImportFileList();
+        if (manufacturerImportFileInput) manufacturerImportFileInput.value = "";
+        manufacturerImportModalBackdrop.classList.add("open");
+        manufacturerImportModalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeManufacturerImportModal() {
+        if (manufacturerImportBusy) return;
+        manufacturerImportValidateSeq += 1;
+        manufacturerImportModalBackdrop.classList.remove("open");
+        manufacturerImportModalBackdrop.setAttribute("aria-hidden", "true");
+        manufacturerImportEntries = [];
+        renderManufacturerImportFileList();
+        if (manufacturerImportFileInput) manufacturerImportFileInput.value = "";
+    }
+
+    function downloadManufacturerImportTemplate() {
+        const header = MANUFACTURER_IMPORT_HEADERS.join(",");
+        const example = MANUFACTURER_IMPORT_HEADERS.map((h) =>
+            csvEscapeCell(MANUFACTURER_IMPORT_EXAMPLE_ROW[h] ?? "")
+        ).join(",");
+        const blob = new Blob([`${header}\r\n${example}\r\n`], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "manufacturer-import-template.csv";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        if (typeof window.showToast === "function") {
+            window.showToast("success", "CSV format file downloaded.");
+        }
+    }
+
+    function downloadFailedManufacturerImportCsv(failedRows) {
+        if (!Array.isArray(failedRows) || !failedRows.length) return;
+        const cols = ["sourceFile", "rowNumber", ...MANUFACTURER_IMPORT_HEADERS, "reason"];
+        const lines = [cols.join(",")];
+        for (const row of failedRows) {
+            lines.push(cols.map((c) => csvEscapeCell(row[c])).join(","));
+        }
+        const blob = new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "manufacturer-import-failures.csv";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function setManufacturerImportLoading(busy) {
+        manufacturerImportBusy = busy;
+        if (btnRunManufacturerImportLabel) {
+            btnRunManufacturerImportLabel.textContent = busy ? "Importing…" : "Import";
+        }
+        if (btnRunManufacturerImport) {
+            btnRunManufacturerImport.classList.toggle("is-loading", busy);
+        }
+        syncManufacturerImportButton();
+    }
+
+    async function runManufacturerImport() {
+        if (manufacturerImportBusy || !allManufacturerImportFilesValid()) return;
+        const validFiles = manufacturerImportEntries
+            .filter((e) => e.status === "valid")
+            .map((e) => e.file);
+        if (!validFiles.length) return;
+        setManufacturerImportLoading(true);
+        clearErr();
+        try {
+            const form = new FormData();
+            for (const f of validFiles) {
+                form.append("files", f, f.name);
+            }
+            const { ok, json } = await api("/api/admin/manufacturers/import-brands", {
+                method: "POST",
+                body: form
+            });
+            if (!ok || !json.success) {
+                showErr(json.error?.message || "Import failed.");
+                return;
+            }
+
+            const failedRows = Array.isArray(json.failedRows) ? json.failedRows : [];
+            const importedCount = Number(json.importedCount || 0);
+            const fileSummaries = Array.isArray(json.files) ? json.files : [];
+            const headerErrors = fileSummaries
+                .filter((f) => f.headerError)
+                .map((f) => `${f.fileName}: ${f.headerError}`);
+
+            if (failedRows.length) {
+                downloadFailedManufacturerImportCsv(failedRows);
+            }
+
+            await Promise.all([loadManufacturers(), loadProducts()]);
+
+            if (headerErrors.length) {
+                showErr(headerErrors.join(" "));
+            }
+
+            if (typeof window.showToast === "function") {
+                const skipped = failedRows.length;
+                let msg = `Imported ${importedCount} manufacturer${importedCount === 1 ? "" : "s"}.`;
+                if (skipped) msg += ` ${skipped} row${skipped === 1 ? "" : "s"} failed (CSV downloaded).`;
+                if (headerErrors.length) {
+                    msg += ` ${headerErrors.length} file${headerErrors.length === 1 ? "" : "s"} rejected for header mismatch.`;
+                }
+                const toastType =
+                    importedCount > 0 || (!skipped && !headerErrors.length) ? "success" : "error";
+                window.showToast(toastType, msg);
+            }
+
+            if (!failedRows.length && !headerErrors.length) {
+                manufacturerImportEntries = [];
+                renderManufacturerImportFileList();
+                if (manufacturerImportFileInput) manufacturerImportFileInput.value = "";
+                manufacturerImportBusy = false;
+                closeManufacturerImportModal();
+            } else {
+                manufacturerImportEntries = [];
+                renderManufacturerImportFileList();
+                if (manufacturerImportFileInput) manufacturerImportFileInput.value = "";
+            }
+        } catch (e) {
+            showErr(e?.message || "Import failed.");
+        } finally {
+            setManufacturerImportLoading(false);
+        }
+    }
+
+    if (btnImportManufacturers) {
+        btnImportManufacturers.addEventListener("click", openManufacturerImportModal);
+    }
+    if (manufacturerImportModalClose) {
+        manufacturerImportModalClose.addEventListener("click", closeManufacturerImportModal);
+    }
+    if (manufacturerImportModalBackdrop) {
+        manufacturerImportModalBackdrop.addEventListener("click", (e) => {
+            if (e.target === manufacturerImportModalBackdrop) closeManufacturerImportModal();
+        });
+    }
+    if (btnDownloadManufacturerImportTemplate) {
+        btnDownloadManufacturerImportTemplate.addEventListener(
+            "click",
+            downloadManufacturerImportTemplate
+        );
+    }
+    if (manufacturerImportDropzone && manufacturerImportFileInput) {
+        manufacturerImportDropzone.addEventListener("click", () => manufacturerImportFileInput.click());
+        manufacturerImportDropzone.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                manufacturerImportFileInput.click();
+            }
+        });
+        manufacturerImportFileInput.addEventListener("change", () => {
+            addManufacturerImportFiles(manufacturerImportFileInput.files);
+            manufacturerImportFileInput.value = "";
+        });
+        ["dragenter", "dragover"].forEach((evt) => {
+            manufacturerImportDropzone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                manufacturerImportDropzone.classList.add("is-dragover");
+            });
+        });
+        ["dragleave", "drop"].forEach((evt) => {
+            manufacturerImportDropzone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                manufacturerImportDropzone.classList.remove("is-dragover");
+            });
+        });
+        manufacturerImportDropzone.addEventListener("drop", (e) => {
+            addManufacturerImportFiles(e.dataTransfer?.files);
+        });
+    }
+    if (btnRunManufacturerImport) {
+        btnRunManufacturerImport.addEventListener("click", () => {
+            void runManufacturerImport();
+        });
+    }
+
+    btnAddProduct.addEventListener("click", async () => {
+        resetMfrForm();
+        // Prefill from the current Products filters to reduce clicks.
+        if (prodRoofType?.value) mfrFormRoofType.value = prodRoofType.value;
+        if (prodSystemType?.value) mfrFormSystemType.value = prodSystemType.value;
+        if (prodCategoryFilter?.value) mfrFormCategory.value = prodCategoryFilter.value;
+        // Brand list is loaded per category; if filter is "(all)" category stays empty — default so brands populate.
+        if (!String(mfrFormCategory.value || "").trim()) {
+            const v = firstMfrCategoryValue();
+            if (v) mfrFormCategory.value = v;
+        }
+
+        openMfrModal("addProduct");
+        await loadBrandOptionsForProductModal();
+    });
+    mfrModalClose.addEventListener("click", closeMfrModal);
+    mfrEditModalBackdrop.addEventListener("click", (e) => {
+        if (e.target === mfrEditModalBackdrop) closeMfrModal();
+    });
+    mfrDeleteCancel.addEventListener("click", closeDeleteModal);
+    mfrDeleteModalBackdrop.addEventListener("click", (e) => {
+        if (e.target === mfrDeleteModalBackdrop) closeDeleteModal();
+    });
+    mfrDeleteConfirm.addEventListener("click", async () => {
+        if (pendingDeleteKind === "brand") {
+            if (!pendingDeleteBrandMeta?.roofType || !pendingDeleteBrandMeta?.brand) return;
+            const q = new URLSearchParams();
+            q.set("roofType", pendingDeleteBrandMeta.roofType);
+            q.set("brand", pendingDeleteBrandMeta.brand);
+            if (pendingDeleteBrandMeta.systemType) q.set("systemType", pendingDeleteBrandMeta.systemType);
+            const r = await api("/api/admin/manufacturers/brand?" + q.toString(), { method: "DELETE" });
+            if (!r.ok || !r.json.success) {
+                showErr(r.json.error?.message || "Delete failed.");
+                return;
+            }
+        } else {
+            if (!pendingDeleteId) return;
+            const url =
+                pendingDeleteKind === "group"
+                    ? "/api/admin/manufacturers/group/" + pendingDeleteId
+                    : "/api/admin/manufacturers/" + pendingDeleteId;
+            const r = await api(url, { method: "DELETE" });
+            if (!r.ok || !r.json.success) {
+                showErr(r.json.error?.message || "Delete failed.");
+                return;
+            }
+        }
+        closeDeleteModal();
+        clearErr();
+        await Promise.all([loadManufacturers(), loadProducts()]);
+    });
+
+    mfrForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        let payload;
+        let url;
+        let method;
+
+        if (currentMfrModalMode === "addManufacturer") {
+            // "Manufacturer" is stored as a manufacturer-group placeholder row;
+            // product lists filter this placeholder out.
+            payload = {
+                roofType: mfrFormRoofType.value,
+                systemType: mfrFormSystemType.value.trim() || null,
+                category: mfrFormCategory.value.trim(),
+                brand: mfrFormBrand.value.trim(),
+                product: MANUFACTURER_GROUP_PLACEHOLDER_PRODUCT,
+                unit: MANUFACTURER_GROUP_PLACEHOLDER_UNIT,
+                coverageValue: MANUFACTURER_GROUP_PLACEHOLDER_COVERAGE_VALUE,
+                coverageBasis: "",
+                componentType: null,
+                sortOrder: 0,
+                isActive: mfrFormIsActive.value === "true"
+            };
+            url = "/api/admin/manufacturers";
+            method = "POST";
+        } else {
+            const brand = currentMfrModalMode === "addProduct" ? mfrFormBrandSelect.value.trim() : mfrFormBrand.value.trim();
+            payload = {
+                roofType: mfrFormRoofType.value,
+                systemType: mfrFormSystemType.value.trim() || null,
+                category: mfrFormCategory.value.trim(),
+                brand,
+                product: mfrFormProduct.value.trim(),
+                unit: mfrFormUnit.value.trim(),
+                coverageValue: Number(mfrFormCoverageValue.value),
+                coverageBasis: mfrFormCoverageBasis.value.trim(),
+                componentType: mfrFormComponentType.value.trim() || null,
+                sortOrder: Number(mfrFormSortOrder.value || 0),
+                isActive: mfrFormIsActive.value === "true"
+            };
+            const id = String(mfrId.value || "").trim();
+            url = id ? "/api/admin/manufacturers/" + id : "/api/admin/manufacturers";
+            method = id ? "PUT" : "POST";
+        }
+
+        const r = await api(url, { method, body: JSON.stringify(payload) });
+        if (!r.ok || !r.json.success) {
+            showErr(r.json.error?.message || r.json.error?.details?.join("; ") || "Save failed.");
+            return;
+        }
+        clearErr();
+        closeMfrModal();
+        resetMfrForm();
+        await Promise.all([loadManufacturers(), loadProducts()]);
+    });
+
+    function selectedProdFilters() {
+        return {
+            roofType: (prodRoofType.value || "").trim(),
+            systemType: (prodSystemType.value || "").trim(),
+            category: (prodCategoryFilter.value || "").trim(),
+            active: prodActiveFilter.value,
+            search: (prodSearch?.value || "").trim()
+        };
+    }
+
+    function productMatchesSearch(p, searchTerm) {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            String(p.product || "").toLowerCase().includes(term) ||
+            String(p.brand || "").toLowerCase().includes(term) ||
+            String(p.category || "").toLowerCase().includes(term) ||
+            String(p.unit || "").toLowerCase().includes(term)
+        );
+    }
+
+    let cachedProductItems = [];
+    let prodPage = 1;
+    const PROD_PAGE_SIZE = 10;
+
+    async function loadProducts() {
+        const f = selectedProdFilters();
+        const q = new URLSearchParams();
+        if (f.roofType) q.set("roofType", f.roofType);
+        if (f.systemType) q.set("systemType", f.systemType);
+        q.set("activeOnly", f.active === "active" ? "true" : "false");
+        const { ok, json } = await api("/api/admin/manufacturers?" + q.toString());
+        if (!ok || !json.success) {
+            showErr(json.error?.message || "Could not load products.");
+            return;
+        }
+        clearErr();
+        cachedProductItems = Array.isArray(json.items) ? json.items : [];
+        prodPage = 1;
+        renderProductsTable();
+        refreshProdFilterBadges();
+    }
+
+    function renderProductsTable() {
+        const f = selectedProdFilters();
+        let items = cachedProductItems.slice();
+        if (f.category) items = items.filter((p) => String(p.category || "") === f.category);
+        if (f.active === "inactive") items = items.filter((p) => !p.is_active);
+        items = items.filter((p) => productMatchesSearch(p, f.search));
+        items.sort((a, b) => {
+            const pb = String(b.product || "").localeCompare(String(a.product || ""), undefined, { sensitivity: "base" });
+            if (pb !== 0) return pb;
+            return String(b.brand || "").localeCompare(String(a.brand || ""), undefined, { sensitivity: "base" });
+        });
+
+        productsBody.innerHTML = "";
+        if (!items.length) {
+            productsBody.innerHTML = `<tr><td colspan="8" class="hint">No products match the current filters.</td></tr>`;
+            renderPagination(productsPagination, { page: 1, pageSize: PROD_PAGE_SIZE, total: 0, onPageChange: () => {} });
+            return;
+        }
+
+        const totalPages = Math.max(1, Math.ceil(items.length / PROD_PAGE_SIZE));
+        if (prodPage > totalPages) prodPage = totalPages;
+        const pageItems = items.slice((prodPage - 1) * PROD_PAGE_SIZE, prodPage * PROD_PAGE_SIZE);
+
+        for (const p of pageItems) {
+            const roofSystem = p.roof_type === "flat" ? `flat / ${p.system_type || "—"}` : "pitched";
+            const tr = document.createElement("tr");
+            tr.className = "product-row";
+            tr.dataset.editId = String(p.id);
+            tr.innerHTML = `
+                <td>${escapeHtml(p.product)}</td>
+                <td>${escapeHtml(p.brand)}</td>
+                <td>${escapeHtml(p.category)}</td>
+                <td>${escapeHtml(roofSystem)}</td>
+                <td>${escapeHtml(p.coverage_value)} <span class="hint">${escapeHtml(p.coverage_basis || "")}</span></td>
+                <td>${escapeHtml(p.unit)}</td>
+                <td>${p.is_active ? "yes" : "no"}</td>
+                <td class="product-row-actions">${actionButtonsHtml(p.id).replace(`data-del-id="${p.id}"`, `data-del-id="${p.id}" data-del-label="${escapeAttr(p.product)}"`)}</td>
+            `;
+            productsBody.appendChild(tr);
+        }
+        bindActionButtons(productsBody);
+        productsBody.querySelectorAll("td.product-row-actions").forEach((td) => {
+            td.addEventListener("click", (ev) => {
+                if (!ev.target.closest("button")) ev.stopPropagation();
+            });
+        });
+        productsBody.querySelectorAll("tr.product-row[data-edit-id]").forEach((row) => {
+            row.addEventListener("click", () => {
+                const id = Number(row.dataset.editId);
+                if (Number.isFinite(id)) openMfrEditorById(id);
+            });
+        });
+
+        renderPagination(productsPagination, {
+            page: prodPage,
+            pageSize: PROD_PAGE_SIZE,
+            total: items.length,
+            onPageChange: (p) => {
+                prodPage = p;
+                renderProductsTable();
+            }
+        });
+    }
+
+    const prodFilterDropdownCtl = setupFilterDropdown(btnProdFilterToggle, prodFilterDropdown);
+
+    clearTabFiltersOnLeave = (leavingTab) => {
+        if (leavingTab === "history") {
+            const fromEl = document.getElementById("historyDateFrom");
+            const toEl = document.getElementById("historyDateTo");
+            if (fromEl) fromEl.value = "";
+            if (toEl) toEl.value = "";
+            historyPage = 1;
+        }
+        if (leavingTab === "manufacturers") {
+            const roofEl = document.getElementById("mfrRoofType");
+            const systemEl = document.getElementById("mfrSystemType");
+            const categoryEl = document.getElementById("mfrCategoryFilter");
+            const searchEl = document.getElementById("mfrSearch");
+            if (roofEl) roofEl.value = "pitched";
+            if (systemEl) systemEl.value = "";
+            if (categoryEl) categoryEl.value = "";
+            if (searchEl) searchEl.value = "";
+            mfrPage = 1;
+            mfrFilterDropdownCtl.close();
+            refreshMfrFilterBadges();
+        }
+        if (leavingTab === "products") {
+            const roofEl = document.getElementById("prodRoofType");
+            const systemEl = document.getElementById("prodSystemType");
+            const categoryEl = document.getElementById("prodCategoryFilter");
+            const activeEl = document.getElementById("prodActiveFilter");
+            const searchEl = document.getElementById("prodSearch");
+            if (roofEl) roofEl.value = "";
+            if (systemEl) systemEl.value = "";
+            if (categoryEl) categoryEl.value = "";
+            if (activeEl) activeEl.value = "all";
+            if (searchEl) searchEl.value = "";
+            prodPage = 1;
+            prodFilterDropdownCtl.close();
+            refreshProdFilterBadges();
+        }
+    };
+
+    btnLoadProducts.addEventListener("click", () => {
+        loadProducts();
+        prodFilterDropdownCtl.close();
+    });
+    btnRefreshProducts.addEventListener("click", loadProducts);
+    if (prodCategoryFilter) {
+        prodCategoryFilter.addEventListener("change", () => {
+            prodPage = 1;
+            if (cachedProductItems.length) renderProductsTable();
+            refreshProdFilterBadges();
+        });
+    }
+    if (prodActiveFilter) {
+        prodActiveFilter.addEventListener("change", () => {
+            prodPage = 1;
+            if (cachedProductItems.length) {
+                renderProductsTable();
+            } else {
+                loadProducts();
+            }
+            refreshProdFilterBadges();
+        });
+    }
+    if (prodSearch) {
+        let prodSearchTimer = null;
+        prodSearch.addEventListener("input", () => {
+            clearTimeout(prodSearchTimer);
+            prodSearchTimer = setTimeout(() => {
+                prodPage = 1;
+                if (cachedProductItems.length) renderProductsTable();
+            }, 200);
+        });
+        prodSearch.addEventListener("search", () => {
+            prodPage = 1;
+            if (cachedProductItems.length) renderProductsTable();
+        });
+    }
+
+    btnLogout.addEventListener("click", async () => {
+        await api("/api/auth/logout", { method: "POST" });
+        // Give the toast a moment before redirecting.
+        window.setTimeout(() => {
+            window.location.href = "/login.html";
+        }, 500);
+    });
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+    function escapeAttr(s) {
+        return escapeHtml(s).replace(/'/g, "&#39;");
+    }
+
+    (async function init() {
+        const user = await requireSession();
+        if (!user) return;
+        const name = String(user.displayName || user.email || "Dashboard").trim();
+        dashboardTitle.textContent = name || "Dashboard";
+        activateTab(tabNameFromHash() || "stats");
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="Roof Estimator">
+    <meta name="description" content="Roof Estimator is a tool that helps you estimate the cost of roofing materials.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Guide — Roof Estimator</title>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body class="centered">
+
+<div class="page-stack">
+    <div class="head-container">
+        <header class="page-header">
+            <div class="brand">
+                <span class="brand-mark"><i class="fa-regular fa-file-lines" aria-hidden="true"></i></span>
+                <h2>Technical guide</h2>
+            </div>
+            <nav class="top-nav" aria-label="Main">
+                <a class="nav-link" href="/"><i class="fa-solid fa-calculator" aria-hidden="true"></i>Estimator</a>
+                <a class="nav-link" href="/guide.html" aria-current="page"><i class="fa-regular fa-file-lines" aria-hidden="true"></i>Technical guide</a>
+                <a id="navDashboard" class="nav-link" href="/dashboard.html" hidden><i class="fa-solid fa-gauge" aria-hidden="true"></i>Dashboard</a>
+                <a id="navSignIn" class="nav-link" href="/login.html" hidden><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>Sign in</a>
+            </nav>
+        </header>
+    </div>
+
+    <div class="container">
+    <article class="guide-content">
+        <h1>Roof material engine — formulas, API &amp; integration</h1>
+        <p class="hint">
+            Runtime: <strong>Node.js 22+</strong>. Persistence uses the built-in <code>node:sqlite</code> module (currently marked experimental by Node).
+        </p>
+        <p>
+            This document is for <strong>your development team</strong> and stakeholders who need to understand
+            how measurements flow through the system, how quantities are derived, and how to integrate the API
+            into a larger CRM, database, or quoting product.
+        </p>
+
+        <div class="callout">
+            <strong>Core idea:</strong> The browser collects roof measurements and product choices. The server
+            (<code>logic/calculator.js</code>) turns that into a structured <code>materials</code> object and
+            optional <code>pricing</code>. Reports (PDF, Word, Excel) are <em>views</em> of that same data—no
+            duplicate business logic in the exporters.
+            <br><br>
+            <strong>Takeoff (primary):</strong> Geometry, a <em>dynamic</em> waste factor, and per-line quantities from the
+            SQLite <code>manufacturer_products</code> catalog (brand, product, unit, coverage). Results include
+            <code>materials.recommendations.pitched</code> or <code>materials.recommendations.flat</code>—pitched and low-slope
+            lines are never mixed. Aggregate fields (<code>shingles</code>, <code>starter</code>, etc.) remain for compatibility and pricing hooks.
+            <br><br>
+            <strong>Pricing (secondary):</strong> Unit costs merge <code>constants/pricing.js</code> with admin Settings
+            (<code>material_prices_json</code>) and optional per-request <code>pricing_overrides</code>.
+            <strong>Margin:</strong> <code>pricing_margin_percent</code> on the request (0–100) when provided; otherwise the admin
+            default (<code>default_margin_percent</code>). Changing prices does not change computed quantities.
+            <br><br>
+            <strong>Product spec snapshots:</strong> Iteration notes for stakeholders live under
+            <code>.cursor/context/client-requirements-v8.md</code> (report summary, area-linked suggested waste, disclaimer page) and
+            <code>.cursor/context/client-requirements-v9.md</code> (export parity, <code>job.address</code>, single waste column, flat line
+            totals, editable margin). This guide reflects the running code, not a verbatim copy of those files.
+        </div>
+
+        <h2>1. System architecture</h2>
+        <pre><code>Browser (index.html)
+    POST /api/calculate     → JSON { materials, pricing, input }
+    POST /api/proposal      → PDF stream
+    POST /api/proposal/docx → Word (.docx) file
+    POST /api/proposal/xlsx → Excel workbook (material order + pricing sheet)
+
+server.js
+    → validation (utils/validation.js) + Joi on admin/auth routes
+    → estimate pipeline (services/estimateService.js)
+    → defaults + unit prices from SQLite (services/settingsService.js)
+    → calculateRoofEstimate (logic/calculator.js)
+    → calculatePricing (logic/pricing.js) with merged unit prices (constants + SQLite + optional request overrides)
+    → persist each successful /api/calculate (services/historyService.js)
+    → PDF / Word / Excel generators (utils/pdf.js, word.js, excel.js)
+
+Admin UI
+    → /login.html  → POST /api/auth/login (httpOnly cookie JWT)
+    → /dashboard.html → /api/admin/* (Stats, Profile, History, Settings, Manufacturers, Products)</code></pre>
+
+        <p>
+            Brand/product order lines are driven by <strong>active rows</strong> in <code>manufacturer_products</code>
+            (see <code>services/manufacturerCatalogService.js</code>), seeded at first run and editable in the dashboard.
+            Exports and <code>utils/reportHelpers.js</code> include a <strong>Section</strong> column:
+            <code>Pitched Roof Materials</code> vs <code>Flat Roof Materials</code>. Each recommendation row uses
+            <code>ceil</code> for purchasable units. If no active rows exist for the selected roof type (and flat system),
+            the API returns an error—keep the catalog maintained.
+        </p>
+
+        <h2>2. Request body (what you send)</h2>
+        <p>Estimator POST bodies share one shape; <code>utils/validation.js</code> validates and normalizes before <code>runEstimate</code>.</p>
+        <pre><code>{
+  "roof": {
+    "area_sqft": 2500,
+    "pitched_area_sqft": null,
+    "flat_area_sqft": null,
+    "area_input_type": "plan" | "slope_adjusted",
+    "pitch": 6,
+    "pitches": [6, 8],
+    "complexity": "low" | "medium" | "high",
+    "type": "pitched" | "flat" | "hybrid",
+    "flat_system": "tpo" | "epdm" | "modified_bitumen"
+  },
+  "lengths": {
+    "ridge_lf": 120,
+    "hip_lf": 80,
+    "valley_lf": 60,
+    "eave_lf": 140,
+    "rake_lf": 100,
+    "flashing_lf": 0
+  },
+  "product": {
+    "shingle_style": "3tab" | "architectural" | "designer",
+    "manufacturer": "GAF" | ...,
+    "manufacturers": ["GAF", "CertainTeed"],
+    "manufacturer_custom": "string when Other is selected"
+  },
+  "waste_suggested_percent": null,
+  "waste_custom_percent": null,
+  "pricing_margin_percent": 20,
+  "pricing_overrides": { "shingles_bundle": 35.5 },
+  "job": { "address": "Optional site address (≤500 chars, echoed on exports)" }
+}</code></pre>
+        <p>
+            <code>product</code> is optional; the server normalizes defaults (<code>architectural</code>, manufacturer <code>GAF</code>).
+            <strong>Hybrid roofs</strong> (<code>type: "hybrid"</code>) require <code>pitched_area_sqft</code>, <code>flat_area_sqft</code>, and
+            <code>area_sqft === pitched + flat</code>. For <code>flat</code> or any job with a flat section, <code>flat_system</code> is required.
+        </p>
+        <p>
+            <strong>Margin:</strong> If <code>pricing_margin_percent</code> is provided (0–100), it is used for <code>calculatePricing</code>.
+            If omitted or empty, the admin default from Settings applies (<code>getDefaultMargin()</code>).
+        </p>
+        <p>
+            <strong>Unit prices:</strong> Baseline keys in <code>constants/pricing.js</code> are merged with SQLite
+            <code>material_prices_json</code> and optional request <code>pricing_overrides</code> (non-negative numbers). The public
+            estimator can send overrides from the UI after “Calculate prices.”
+        </p>
+        <p>
+            <strong>Area &amp; pitch:</strong> When <code>area_input_type === "slope_adjusted"</code>, stored areas are already pitch-expanded;
+            the calculator does <strong>not</strong> multiply by <code>pitchMultiplier</code> again. When <code>plan</code>, pitched sections use
+            <code>planArea × pitchMultiplier(pitch)</code> for surface area. Flat sections never use the pitch multiplier.
+        </p>
+        <p>
+            <strong>Job address:</strong> Optional <code>job.address</code> is normalized and echoed on PDF, Word, and Excel headers.
+            Shingle style and <code>manufacturers</code> drive brand filtering; <strong>recommendation quantities</strong> come from the
+            catalog (<code>roof.type</code>, and for flat rows <code>system_type</code> matching <code>flat_system</code>).
+        </p>
+
+        <h2>3. API reference</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Method &amp; path</th>
+                    <th>Response</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>GET /api/health</code></td>
+                    <td>JSON</td>
+                    <td>Load balancer / uptime check.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/estimator/measurement-profile</code></td>
+                    <td>JSON</td>
+                    <td>Public: admin-configured customer measurement profile for pre-filling the estimator.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/estimator/brands</code></td>
+                    <td>JSON</td>
+                    <td>Public: distinct active brands from the catalog (+ <code>Other</code>). Query: <code>roofType</code> (<code>pitched</code>|<code>flat</code>|<code>hybrid</code>), optional <code>systemType</code> for flat.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/estimator/flat-products</code></td>
+                    <td>JSON</td>
+                    <td>Public: active flat products for a required <code>systemType</code>; optional comma-separated <code>brands</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/calculate</code></td>
+                    <td>JSON</td>
+                    <td>Primary integration: materials + pricing + echoed normalized input. Uses <code>optionalAuth</code>; persists history on success.</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/proposal</code></td>
+                    <td>PDF binary</td>
+                    <td>Tabular estimate PDF (<code>optionalAuth</code>; does not write history by itself).</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/proposal/docx</code></td>
+                    <td>Word binary</td>
+                    <td>Same data as PDF in editable Word format.</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/proposal/xlsx</code></td>
+                    <td>Excel binary</td>
+                    <td>“Roofing material order” sheet + “Pricing” sheet (aligned to contractor order workflows).</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/auth/login</code></td>
+                    <td>JSON + cookie</td>
+                    <td>Admin sign-in; sets httpOnly JWT cookie.</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/auth/logout</code></td>
+                    <td>JSON</td>
+                    <td>Clears session cookie.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/auth/me</code></td>
+                    <td>JSON</td>
+                    <td>Current user or <code>null</code> if not signed in.</td>
+                </tr>
+                <tr>
+                    <td><code>GET/PUT /api/admin/settings</code></td>
+                    <td>JSON</td>
+                    <td>Read/update default margin % and per-line material unit prices (requires auth).</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/admin/manufacturers</code></td>
+                    <td>JSON</td>
+                    <td>List catalog rows. Query: <code>roofType</code>, <code>systemType</code>, <code>activeOnly</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/admin/manufacturers/grouped</code></td>
+                    <td>JSON</td>
+                    <td>Grouped by roof/system/category/brand for the Manufacturers dashboard table.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/admin/manufacturers/:id</code></td>
+                    <td>JSON</td>
+                    <td>Single row (edit modal).</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/admin/manufacturers</code></td>
+                    <td>JSON</td>
+                    <td>Create row (Joi-validated body). Add manufacturer uses placeholder product <code>__MANUFACTURER_GROUP__</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>PUT /api/admin/manufacturers/:id</code></td>
+                    <td>JSON</td>
+                    <td>Update row.</td>
+                </tr>
+                <tr>
+                    <td><code>DELETE /api/admin/manufacturers/:id</code></td>
+                    <td>JSON</td>
+                    <td>Delete a single product row.</td>
+                </tr>
+                <tr>
+                    <td><code>DELETE /api/admin/manufacturers/group/:representativeId</code></td>
+                    <td>JSON</td>
+                    <td>Delete all rows sharing that row’s roof/system/category/brand group.</td>
+                </tr>
+                <tr>
+                    <td><code>DELETE /api/admin/manufacturers/brand</code></td>
+                    <td>JSON</td>
+                    <td>Delete an entire brand under a roof/system. Query: <code>roofType</code>, <code>brand</code>, optional <code>systemType</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/admin/manufacturers/import/template.csv</code></td>
+                    <td>CSV</td>
+                    <td>Product import CSV template (auth).</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/admin/manufacturers/import/validate</code></td>
+                    <td>JSON</td>
+                    <td>Validate product import file headers (multipart <code>files</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/admin/manufacturers/import</code></td>
+                    <td>JSON</td>
+                    <td>Import product rows from CSV/XLSX. Valid rows insert; failures returned in <code>failedRows</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/admin/manufacturers/import-brands/template.csv</code></td>
+                    <td>CSV</td>
+                    <td>Manufacturer (brand group) import template.</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/admin/manufacturers/import-brands/validate</code></td>
+                    <td>JSON</td>
+                    <td>Validate manufacturer import headers.</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/admin/manufacturers/import-brands</code></td>
+                    <td>JSON</td>
+                    <td>Import manufacturer placeholders (same as Add manufacturer). Duplicates skip to <code>failedRows</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/admin/stats</code></td>
+                    <td>JSON</td>
+                    <td>History aggregates for dashboard.</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/admin/history</code></td>
+                    <td>JSON</td>
+                    <td>Paginated list; rows include <code>user_name</code> (display name or email, joined from <code>users</code>). Query <code>limit</code>, <code>offset</code>, optional <code>dateFrom</code> / <code>dateTo</code> (<code>YYYY-MM-DD</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/admin/history/:id</code></td>
+                    <td>JSON</td>
+                    <td>Full stored payload for one run; item includes <code>userName</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>GET/PUT /api/admin/profile</code></td>
+                    <td>JSON</td>
+                    <td>Display name.</td>
+                </tr>
+                <tr>
+                    <td><code>PUT /api/admin/password</code></td>
+                    <td>JSON</td>
+                    <td>Change password.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Catalog model &amp; CSV/XLSX import</h3>
+        <p>
+            There is no separate manufacturers table. Everything lives in <code>manufacturer_products</code>.
+            A manufacturer group is the key <code>(roof_type, system_type, category, brand)</code>.
+            <strong>Add manufacturer</strong> inserts a placeholder row with
+            <code>product = "__MANUFACTURER_GROUP__"</code> (filtered out of estimation lists).
+            Real products share that group key and appear under category tabs in the dashboard.
+        </p>
+        <ul>
+            <li><strong>Header mismatch:</strong> entire file rejected (<code>files[].headerError</code>); other files in the batch still process.</li>
+            <li><strong>Product import columns:</strong> <code>roofType, systemType, category, brand, product, unit, coverageValue, coverageBasis, componentType, sortOrder, isActive</code>. Brand must already exist for that roof/system/category.</li>
+            <li><strong>Manufacturer import columns:</strong> <code>roofType, systemType, category, brand, isActive</code>. Creates placeholder groups; fails if the group already exists.</li>
+            <li><strong>Row failures:</strong> invalid category, Joi errors, missing brand (products), or <strong>duplicates</strong> → no insert; row appears in <code>failedRows</code> with a <code>reason</code>. The dashboard auto-downloads a failures CSV when any rows fail.</li>
+            <li><strong>Duplicate product key:</strong> <code>roofType + systemType + category + brand + product</code>.</li>
+            <li><strong>Duplicate manufacturer key:</strong> any existing row for <code>roofType + systemType + category + brand</code>.</li>
+        </ul>
+
+        <h3>Error format (robust handling)</h3>
+        <p>Failed requests return JSON (never a partial file) with a stable shape:</p>
+        <pre><code>{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR" | "INVALID_JSON" | "NOT_FOUND" | "INTERNAL_ERROR"
+         | "AUTH_FAILED" | "DUPLICATE_PRODUCT" | "DUPLICATE_EMAIL"
+         | "UPLOAD_ERROR" | "IMPORT_ERROR" | "PDF_ERROR" | "PARSE_ERROR",
+    "message": "Human-readable summary",
+    "details": ["Optional bullet list", "..."]
+  }
+}</code></pre>
+        <p>Binary export endpoints use the same error JSON on 4xx/5xx so clients can branch on <code>Content-Type: application/json</code>.</p>
+
+        <h2>4. Core formulas (<code>logic/calculator.js</code>)</h2>
+
+        <h3>4.1 Pitch-adjusted surface area</h3>
+        <p>
+            For each <strong>pitched</strong> section, <code>planAreaSqft</code> is the section’s plan footprint
+            (<code>pitched_area_sqft</code> on hybrid, or <code>area_sqft</code> on pitched-only).
+            Surface area for quantity math is:
+        </p>
+        <pre><code>pitchMultiplier = sqrt((pitch² + 12²) / 12²)   // 12" run
+If roof.area_input_type === "slope_adjusted":
+  surfaceArea = planAreaSqft            // already slope-expanded input
+Else:
+  surfaceArea = planAreaSqft × pitchMultiplier</code></pre>
+        <p>
+            <strong>Flat</strong> sections use <code>flat_area_sqft</code> as surface area with no pitch multiplier.
+            <strong>Hybrid</strong> (<code>roof.type === "hybrid"</code>) runs two independent sections (pitched + flat);
+            <code>materials.recommendations</code> lists both; top-level <code>meta.roofType</code> is <code>mixed</code>.
+        </p>
+        <p>Example: 2,500 sq ft plan at 6/12, <code>area_input_type: "plan"</code> → multiplier ≈ 1.118 → ~2,795 sq ft surface.</p>
+
+        <h3>4.2 Waste factor (suggested vs applied)</h3>
+        <p>
+            Per section, the engine computes a calibrated model waste fraction in <code>dynamicWasteFactor</code>
+            (using that section’s <code>roofType</code>: <code>pitched</code> or <code>flat</code>). It depends on
+            <code>complexity</code>, pitched <code>pitch</code>, linear feet (valley, hip, ridge), and an area-linked term
+            <code>areaWasteAdjustment(surfaceAreaSqft, roofType)</code> (smaller footprints bump waste slightly; larger bump down—bounded).
+            The suggested value is stored as <code>meta.suggestedWasteFactor</code> (per section on hybrid).
+        </p>
+        <pre><code>base = (sectionRoofType === "flat") ? 0.038 : 0.068
+complexityBump = f(complexity, sectionRoofType)  // high/medium/low; flat vs pitched
+pitchBump = (flat) ? 0 : clamp((pitch - 4) × 0.0027, 0, 0.036)
+shapeBump = (flat) ? 0 : (valley/100)×0.036 + (hip/100)×0.022 + (ridge/100)×0.009
+areaBump = areaWasteAdjustment(surfaceArea, sectionRoofType)  // ref 3200 sq ft, capped ± bump
+computedWaste = min(base + complexityBump + pitchBump + shapeBump + areaBump, cap)
+  // cap: flat 0.18, pitched 0.30
+
+// Applied waste (priority):
+// 1) waste_custom_percent (≥0) as a percent → /100
+// 2) else waste_suggested_percent if a finite number ≥ 0 → /100
+// 3) else computedWaste
+
+applied → meta.wasteFactor; drives (1 + waste) for shingle-area rows and pitched aggregates</code></pre>
+        <p>
+            <code>meta.wasteSource</code> records which branch ran (<code>client_custom_waste_percent</code>,
+            <code>client_suggested_waste_override</code>, or <code>calibrated_dynamic_model</code>).
+            A separate legacy curve remains as <code>meta.legacyWasteFactor</code> for reference only (not applied to quantities).
+        </p>
+
+        <h3>4.3 Shingles (squares &amp; bundles)</h3>
+        <p>Applies to <strong>pitched</strong> sections (aggregate compatibility and underlayment pairing). Flat membrane quantities come from catalog rows only.</p>
+        <pre><code>adjustedArea = surfaceArea × (1 + waste)
+rawSquares = adjustedArea / 100
+squares = ceil(rawSquares)          // contractor-style full squares
+bundles = squares × 3               // CONSTANTS.bundlesPerSquare</code></pre>
+
+        <h3>4.4 Starter</h3>
+        <pre><code>lf = eave_lf + rake_lf
+bundles = ceil(lf / starterCoverage)   // 100 LF per bundle (constant)</code></pre>
+
+        <h3>4.5 Ridge / hip caps</h3>
+        <pre><code>lf = ridge_lf + hip_lf
+bundles = ceil(lf / ridgeCapCoverage)  // 20 LF per bundle (constant)</code></pre>
+
+        <h3>4.6 Underlayment</h3>
+        <p>Pitched aggregate only; flat underlayment is a catalog line if present.</p>
+        <pre><code>adjusted = surfaceArea × (1 + waste)
+rolls = ceil(adjusted / underlaymentEffectiveCoverage)  // 360 sq ft/roll effective</code></pre>
+
+        <h3>4.7 Drip edge</h3>
+        <pre><code>lf = eave_lf + rake_lf
+pieces = ceil(lf / dripEdgeLength)   // 10 LF sticks</code></pre>
+
+        <h3>4.8 Valley membrane</h3>
+        <pre><code>sqft = valley_lf × 3   // 3' width assumption
+rolls = ceil(sqft / 200)</code></pre>
+
+        <h3>4.9 Nails</h3>
+        <pre><code>count = squares × nailsPerSquare   // 320 per square (constant)</code></pre>
+
+        <h3>4.10 Vents</h3>
+        <pre><code>units = ceil(section_plan_area_sqft / 300)</code></pre>
+        <p>Pitched section plan area (not pitch-expanded) drives the default ventilation row when the catalog has no Ventilation line.</p>
+
+        <h3>4.11 Flashing (order estimate)</h3>
+        <pre><code>lf = (lengths.flashing_lf > 0) ? flashing_lf : (eave_lf + rake_lf)
+rolls = ceil(lf / 75)</code></pre>
+        <p>
+            Optional <code>lengths.flashing_lf</code> overrides the eave+rake default for recommendation rows and aggregate flashing pricing.
+            Flat sections omit aggregate flashing.
+        </p>
+
+        <h3>4.12 Brand/product recommendation lines</h3>
+        <p>
+            Active rows from <code>manufacturer_products</code> are read with <code>listManufacturerProducts</code>
+            (<code>roof_type</code> and, for flat, <code>system_type</code> matching <code>flat_system</code>).
+            Each row has <code>category</code>, <code>brand</code>, <code>product</code>, <code>unit</code>, <code>coverage_value</code>,
+            optional <code>component_type</code> (e.g. <code>membrane</code> for flat pricing heuristics). The calculator maps
+            category (and sometimes product name, e.g. rake vs eave drip edge) to a quantity formula; every displayed quantity is
+            rounded up. Pitched-only rows populate <code>materials.recommendations.pitched</code>; flat-only rows populate
+            <code>materials.recommendations.flat</code>—no cross-listing.
+        </p>
+
+        <h2>5. Constants (single source of truth)</h2>
+        <p>Defined in <code>export const CONSTANTS</code> inside <code>constants/estimation.js</code>. These feed the
+            <strong>aggregate</strong> material lines (bundles per square, generic starter/ridge coverage, underlayment roll effectiveness, etc.).
+            Per-brand SKU coverage lives on each <code>manufacturer_products</code> row (<code>coverage_value</code> / <code>coverage_basis</code>).</p>
+        <table>
+            <thead>
+                <tr><th>Key</th><th>Value</th><th>Role</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>bundlesPerSquare</code></td><td>3</td><td>Shingle bundles per square</td></tr>
+                <tr><td><code>starterCoverage</code></td><td>100 LF</td><td>Starter per bundle</td></tr>
+                <tr><td><code>ridgeCapCoverage</code></td><td>20 LF</td><td>Ridge/hip cap per bundle</td></tr>
+                <tr><td><code>underlaymentEffectiveCoverage</code></td><td>360 sq ft</td><td>After overlaps</td></tr>
+                <tr><td><code>dripEdgeLength</code></td><td>10 LF</td><td>Stick length</td></tr>
+                <tr><td><code>nailsPerSquare</code></td><td>320</td><td>Nail estimate per square</td></tr>
+                <tr><td><code>nailsPerBox</code></td><td>7200</td><td>Pack size for nail box estimates</td></tr>
+                <tr><td><code>capsPerBox</code></td><td>2000</td><td>Plastic caps per box/roll</td></tr>
+            </tbody>
+        </table>
+
+        <h2>6. Pricing module (<code>logic/pricing.js</code> &amp; <code>utils/reportPricing.js</code>)</h2>
+        <p>
+            <code>calculatePricing(materials, marginPercent, priceOverrides)</code> builds subtotals from aggregate quantities
+            (pitched) or from flat recommendation rows (see below). Baseline unit keys live in <code>constants/pricing.js</code>;
+            admin Settings (<code>material_prices_json</code>) and optional request <code>pricing_overrides</code> merge into the
+            active price map (<code>utils/reportPricing.js</code>’s <code>getPriceMap</code> for exports). Margin comes from the
+            request when <code>pricing_margin_percent</code> is set; otherwise <code>getDefaultMargin()</code> from Settings.
+        </p>
+        <p>
+            <strong>Pitched:</strong> Breakdown lines use legacy aggregates: <code>shingles_bundle</code>, <code>starter_bundle</code>,
+            <code>ridge_bundle</code>, <code>underlayment_roll</code>, <code>drip_edge_piece</code>, <code>valley_roll</code>,
+            <code>nail_unit</code>, <code>vent_unit</code>, <code>flashing_roll</code>.
+        </p>
+        <p>
+            <strong>Flat:</strong> No aggregate shingle bundle math. Each flat catalog row’s <code>qty × unitPrice</code> is rolled into
+            <code>breakdown.flatMembrane</code> (rows with <code>componentType === "membrane"</code>, or uncategorized flat rows priced as membrane)
+            or <code>breakdown.flatBase</code> (<code>componentType === "base"</code> or flat <code>underlayment</code> priced at
+            <code>underlayment_roll</code>). Keys include <code>flat_membrane_roll</code>, <code>flat_base_roll</code>,
+            <code>sealant_tube</code>, etc., per <code>constants/pricing.js</code>.
+        </p>
+        <p>
+            <strong>Mixed (hybrid):</strong> Pitched and flat priced separately; subtotals summed and margin applied once on the total.
+        </p>
+        <p>
+            <strong>Exports:</strong> PDF/Word/Excel use <code>unitPriceForRow</code> / category mapping so each printed line gets a unit
+            price and line total consistent with the catalog row (including sealant and flat splits)—not only the coarse
+            <code>pricing.breakdown</code> buckets.
+        </p>
+
+        <h2>7. Reports &amp; exports (PDF, Word, Excel)</h2>
+        <ul>
+            <li><strong>Single waste column:</strong> Tables show one quantity column; waste is applied inside quantities. PDF/Word can show the effective waste % in one column (no duplicate “with waste” column).</li>
+            <li><strong>Summary:</strong> Coversheet-style summary does <strong>not</strong> repeat total plan area as a headline stat; it emphasizes areas by section, suggested vs applied waste where relevant, and pricing totals.</li>
+            <li><strong>Category rows:</strong> Manufacturer category header rows use highlight styling (not alternating zebra stripes).</li>
+            <li><strong>Disclaimer / Important notes:</strong> Verbatim legal/safety notes from <code>constants/reportNotes.js</code> appear on a final page (PDF/Word) and an “Important notes” area in Excel.</li>
+            <li><strong>Job address:</strong> When <code>job.address</code> is present, it appears in report headers and the Excel material sheet.</li>
+            <li><strong>Excel workbook:</strong> Material order sheet includes section bands and line-level unit price / extended price where applicable; a Pricing sheet mirrors contractor workflow labels aligned with flat membrane vs base splits.</li>
+        </ul>
+
+        <h2>8. Integration checklist for your devs</h2>
+        <ol>
+            <li><strong>Validate</strong> user input client-side for UX; rely on server validation for correctness (hybrid:
+            <code>pitched_area_sqft</code>/<code>flat_area_sqft</code>/<code>area_sqft</code>; <code>flat_system</code> when any flat area;
+            <code>area_input_type</code> for plan vs slope-adjusted areas). Optional <code>job.address</code>,
+            <code>waste_*</code>, <code>pricing_margin_percent</code>, and <code>pricing_overrides</code> follow the schemas in
+            <code>utils/validation.js</code>.</li>
+            <li><strong>Store</strong> normalized <code>input</code> plus full <code>materials</code> JSON; order lines live under
+            <code>materials.recommendations</code>. Read <code>materials.meta.wasteFactor</code> (applied) vs
+            <code>suggestedWasteFactor</code> (model) for audits.</li>
+            <li><strong>Maintain</strong> the manufacturer catalog via dashboard (Add manufacturer / Add product) or CSV import APIs so each roof type has active products. Import brands before importing products.</li>
+            <li><strong>Sync</strong> Settings prices (or CRM supplier feeds) without expecting quantity changes from price edits alone.</li>
+            <li><strong>Map</strong> Excel / Word section and product columns to your internal SKU table.</li>
+            <li><strong>Extend</strong> takeoff rules in <code>logic/calculator.js</code> and catalog shape via DB + Joi as needed; exporters consume the same <code>materials</code> object.</li>
+        </ol>
+
+        <h2>9. Files map</h2>
+        <table>
+            <thead>
+                <tr><th>File</th><th>Responsibility</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>server.js</code></td><td>HTTP entry, wiring, public estimate + export routes</td></tr>
+                <tr><td><code>db/database.js</code></td><td>SQLite schema, admin seed, settings, history, <code>manufacturer_products</code> seed</td></tr>
+                <tr><td><code>services/estimateService.js</code></td><td>Validate → normalize → calculate → price (margin + overrides from body or defaults)</td></tr>
+                <tr><td><code>services/manufacturerCatalogService.js</code></td><td>Catalog CRUD, list, grouped list, brand helpers</td></tr>
+                <tr><td><code>services/manufacturerImportService.js</code></td><td>Product CSV/XLSX parse, validate, import</td></tr>
+                <tr><td><code>services/manufacturerBrandImportService.js</code></td><td>Manufacturer placeholder CSV/XLSX import</td></tr>
+                <tr><td><code>constants/manufacturerCatalogMeta.js</code></td><td>Category allowlist + import header templates</td></tr>
+                <tr><td><code>utils/logger.js</code></td><td>Leveled logging (info / warn / error) + request log helper</td></tr>
+                <tr><td><code>services/settingsService.js</code></td><td>Read/write margin + material unit prices + measurement profile</td></tr>
+                <tr><td><code>services/historyService.js</code></td><td>Persist and query saved calculations</td></tr>
+                <tr><td><code>routes/authRoutes.js</code></td><td>Login / logout / me</td></tr>
+                <tr><td><code>routes/adminRoutes.js</code></td><td>Dashboard API (stats, history, profile, settings, manufacturers)</td></tr>
+                <tr><td><code>middleware/auth.js</code></td><td>JWT cookie, optional + required auth</td></tr>
+                <tr><td><code>middleware/validate.js</code></td><td>Joi body/query validation wrapper</td></tr>
+                <tr><td><code>utils/joiSchemas.js</code></td><td>Joi schemas for auth/admin (includes manufacturer product body)</td></tr>
+                <tr><td><code>utils/validation.js</code></td><td>Estimator request schema + normalization</td></tr>
+                <tr><td><code>constants/estimation.js</code></td><td>Quantity constants (<code>CONSTANTS</code>)</td></tr>
+                <tr><td><code>constants/pricing.js</code></td><td>Baseline unit prices (pitched + flat membrane/base/sealant) + default margin constant</td></tr>
+                <tr><td><code>constants/reportNotes.js</code></td><td>Verbatim Important notes / disclaimer text for exports</td></tr>
+                <tr><td><code>constants/materialCatalog.js</code></td><td>Seed data for initial catalog population / reset scripts</td></tr>
+                <tr><td><code>logic/calculator.js</code></td><td>All quantity logic</td></tr>
+                <tr><td><code>logic/pricing.js</code></td><td>Line-item dollars + margin math</td></tr>
+                <tr><td><code>utils/reportHelpers.js</code></td><td>Shared rows/labels and material table grouping for exporters</td></tr>
+                <tr><td><code>utils/reportPricing.js</code></td><td>Price key per catalog row, merged price map (baseline + DB + request)</td></tr>
+                <tr><td><code>utils/pdf.js</code></td><td>PDF layout</td></tr>
+                <tr><td><code>utils/word.js</code></td><td>Word (.docx) layout</td></tr>
+                <tr><td><code>utils/excel.js</code></td><td>Roofing material order workbook</td></tr>
+                <tr><td><code>public/index.html</code></td><td>Estimator UI</td></tr>
+                <tr><td><code>public/login.html</code></td><td>Admin sign-in</td></tr>
+                <tr><td><code>public/dashboard.html</code></td><td>Admin dashboard (tabs)</td></tr>
+                <tr><td><code>public/guide.html</code></td><td>This documentation</td></tr>
+            </tbody>
+        </table>
+    </article>
+    </div>
+</div>
+<script src="/js/nav-auth.js" defer></script>
+
+</body>
+</html>

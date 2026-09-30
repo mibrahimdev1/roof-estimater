@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="Roof Estimator">
+    <meta name="description" content="Roof Estimator is a tool that helps you estimate the cost of roofing materials.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roof Estimator — Home</title>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body class="centered">
+
+<div class="page-stack">
+    <div class="head-container">
+        <header class="page-header">
+            <div class="brand">
+                <img src="/icon.png" alt="Roof Estimator" width="52" height="42">
+                <h4>Roof Estimator</h4>
+            </div>
+            <nav class="top-nav" aria-label="Main">
+                <a class="nav-link" href="/" aria-current="page"><i class="fa-solid fa-calculator" aria-hidden="true"></i>Estimator</a>
+                <a class="nav-link" href="/guide.html"><i class="fa-regular fa-file-lines" aria-hidden="true"></i>Technical guide</a>
+                <a id="navDashboard" class="nav-link" href="/dashboard.html" hidden><i class="fa-solid fa-gauge" aria-hidden="true"></i>Dashboard</a>
+                <a id="navSignIn" class="nav-link" href="/login.html" hidden><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>Sign in</a>
+            </nav>
+        </header>
+    </div>
+
+    <div class="container">
+    <div id="errorBanner" class="error-banner" role="alert"></div>
+
+    <div class="layout">
+        <div class="column">
+            <div id="flatSystemWrap" class="field-hidden">
+                <label>Flat roofing system</label>
+                <select id="flatSystem">
+                    <option value="tpo">TPO</option>
+                    <option value="epdm">EPDM</option>
+                    <option value="modified_bitumen">Modified bitumen</option>
+                </select>
+            </div>
+
+            <label>Shingle style (material type)</label>
+            <select id="shingleStyle">
+                <option value="architectural">Architectural (dimensional)</option>
+                <option value="3tab">3-Tab</option>
+                <option value="designer">Designer / luxury</option>
+            </select>
+
+            <label>Preferred brands (select 1–4)</label>
+            <select id="manufacturers" multiple size="7" onchange="toggleManufacturerCustom()">
+                <option value="" disabled>Loading brands…</option>
+            </select>
+            <span class="hint">Hold Ctrl/Cmd to select multiple brands. Add “Other” only if you need a brand not listed.</span>
+
+            <div id="manufacturerCustomWrap" class="field-hidden">
+                <label>Manufacturer name (custom)</label>
+                <input id="manufacturerCustom" type="text" maxlength="200" placeholder="e.g. Local supplier brand" />
+            </div>
+
+            <div id="flatProductsWrap" class="field-hidden">
+                <label>Flat roof products (select items to include)</label>
+                <div id="flatProductsList" class="checkbox-list" role="group" aria-label="Flat roof products"></div>
+                <span class="hint">Shown for flat or hybrid roofs. Uncheck items to exclude them from the estimate.</span>
+            </div>
+
+            <div id="fastenersWrap" class="field-hidden">
+                <label>Fasteners (pitched roof)</label>
+                <div class="checkbox-list" role="group" aria-label="Fastener options">
+                    <label class="checkbox-row">
+                        <input id="includeRoofingNails" type="checkbox" checked />
+                        Roofing Nails 1-1/4 in
+                    </label>
+                    <label class="checkbox-row">
+                        <input id="includePlasticCaps" type="checkbox" checked />
+                        Plastic Caps
+                    </label>
+                </div>
+            </div>
+
+            <div class="main-waste-panel" id="mainWasteVisibility">
+                <div class="result-section-title">Waste (verification)</div>
+                <table class="main-waste-table">
+                    <tbody id="mainWasteVisibilityBody">
+                        <tr>
+                            <td>Suggested waste (model)</td>
+                            <td id="mainWasteSuggested">—</td>
+                        </tr>
+                        <tr>
+                            <td>Custom waste override (if any)</td>
+                            <td id="mainWasteCustom">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <span class="hint" id="mainWasteHint">Suggested values update after you run Calculate on this page.</span>
+            </div>
+
+            <label>Custom waste override (%) — optional</label>
+            <input id="wasteCustomPercent" type="number" min="0" max="100" step="0.01" placeholder="e.g. 15" />
+
+            <label>Pricing margin (%) — optional</label>
+            <input id="pricingMarginPercent" type="number" min="0" max="100" step="0.1" placeholder="Uses admin default if empty" />
+            <span class="hint">Customer option — applied to material subtotal on calculate and exports.</span>
+
+        </div>
+
+        <div class="column">
+            <label>Roof Complexity</label>
+            <select id="complexity">
+                <option value="low">Simple (gable)</option>
+                <option value="medium">Medium</option>
+                <option value="high">Complex (valleys, cuts)</option>
+            </select>
+
+            <label>Roof Type</label>
+            <select id="roofType" onchange="toggleRoofTypeFields()">
+                <option value="pitched">Pitched roof</option>
+                <option value="flat">Flat roof</option>
+                <option value="hybrid">Pitched + flat (hybrid)</option>
+            </select>
+
+            <div id="measurementStateHint" class="hint field-hidden"></div>
+            <div id="measurementSourceHint" class="hint field-hidden"></div>
+        </div>
+
+        <div class="column" id="geometryFieldsWrap">
+            <label>Total roof area (sq ft) — slope-adjusted, system managed</label>
+            <input id="area" type="number" min="1" step="1" placeholder="2500" />
+
+            <div id="hybridAreaWrap" class="field-hidden">
+                <label>Pitched section area (sq ft) — slope-adjusted, system managed</label>
+                <input id="pitchedArea" type="number" min="0" step="1" placeholder="1500" />
+
+                <label>Flat section area (sq ft) — slope-adjusted, system managed</label>
+                <input id="flatArea" type="number" min="0" step="1" placeholder="1000" />
+            </div>
+
+            <label>Roof pitch (rise / 12&quot; run) — comma-separated for multiple faces</label>
+            <input id="pitch" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 8 or 8, 6, 10" />
+            <span class="hint">Displayed area is already slope-adjusted. The model uses the <strong>first</strong> pitch only; extra values are recorded for reference. For multiple faces, enter comma-separated areas (e.g. <code>5374, 968</code>) matching each pitch.</span>
+
+            <label>Ridge Length (LF) — system managed</label>
+            <input id="ridge" type="number" min="0" step="0.1" placeholder="120" />
+            
+            <label>Hip Length (LF) — system managed</label>
+            <input id="hip" type="number" min="0" step="0.1" placeholder="80" />
+
+            <label>Valley Length (LF) — system managed</label>
+            <input id="valley" type="number" min="0" step="0.1" placeholder="60" />
+
+            <label>Eave Length (LF) — system managed</label>
+            <input id="eave" type="number" min="0" step="0.1" placeholder="140" />
+
+            <label>Rake Length (LF) — system managed</label>
+            <input id="rake" type="number" min="0" step="0.1" placeholder="100" />
+
+            <label>Step flashing length (LF) — editable for testing</label>
+            <input id="flashing" type="number" min="0" step="0.1" placeholder="15" />
+
+            <label>Apron flashing length (LF) — editable for testing</label>
+            <input id="apronFlashing" type="number" min="0" step="0.1" placeholder="2" />
+
+            <label>Job site address — optional (prints on PDF / Word)</label>
+            <textarea id="jobAddress" rows="2" maxlength="500" placeholder="Street, city, state / project name"></textarea>
+
+            <span id="geometryLockHint" class="hint">Geometry fields are customer-locked. Populate via internal workflow/import.</span>
+
+            <div class="buttons">
+                <button id="btnCalculate" type="button" onclick="calculate()"><i class="fa-solid fa-calculator" aria-hidden="true"></i>Calculate</button>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+
+<div id="resultModalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-box result-modal-box">
+        <div class="page-header result-modal-header">
+            <h3 style="margin:0;color:#fff;">Estimation result</h3>
+            <button type="button" class="nav-link" id="btnResultModalClose" aria-label="Close result modal">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="result-modal-content">
+            <div id="resultSummary" class="result-summary" aria-live="polite"></div>
+
+            <div id="jsonPanel" class="json-panel" hidden>
+                <div class="json-panel-title">
+                    <span class="hint">Technical JSON</span>
+                </div>
+                <pre id="result" class="json-pre"></pre>
+            </div>
+        </div>
+
+        <div class="result-modal-footer">
+            <button type="button" class="secondary" id="btnModalPdf">
+                <i class="fa-regular fa-file-pdf" aria-hidden="true"></i>PDF
+            </button>
+            <button type="button" class="secondary" id="btnModalDocx">
+                <i class="fa-regular fa-file-word" aria-hidden="true"></i>Word
+            </button>
+            <button type="button" class="tertiary" id="btnModalXlsx">
+                <i class="fa-regular fa-file-excel" aria-hidden="true"></i>Excel order
+            </button>
+            <button type="button" id="btnViewJson" class="secondary" hidden aria-label="View technical JSON">
+                <i class="fa-regular fa-file-code" aria-hidden="true"></i>View JSON
+            </button>
+            <button type="button" id="copyResultBtn" class="copy-btn" hidden aria-label="Copy result JSON">
+                <i class="fa-regular fa-copy" aria-hidden="true"></i>Copy JSON
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/toast.js"></script>
+<script>
+    function isCustomerMode() {
+        const params = new URLSearchParams(window.location.search || "");
+        // v5 default: customer mode ON (geometry hidden/locked).
+        // Internal team can opt in with ?internalMode=1
+        if (params.get("internalMode") === "1") return false;
+        return true;
+    }
+
+    function setMeasurementSourceLabel(sourceText) {
+        if (!sourceText) {
+            measurementSourceHint.classList.add("field-hidden");
+            measurementSourceHint.textContent = "";
+            return;
+        }
+        measurementSourceHint.classList.remove("field-hidden");
+        measurementSourceHint.textContent = sourceText;
+    }
+
+    function toNumOrNull(v) {
+        const raw = String(v ?? "").trim();
+        if (raw === "") return null;
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    /** Parse comma/space-separated pitches; first value drives calculations. */
+    function parsePitchInput(raw) {
+        const s = String(raw ?? "").trim();
+        if (!s) return { primary: null, pitches: [] };
+        const parts = s.split(/[\s,]+/).map((p) => p.trim()).filter(Boolean);
+        const pitches = [];
+        for (const p of parts) {
+            const n = Number(p);
+            if (Number.isFinite(n) && n >= 0 && n <= 24) pitches.push(n);
+        }
+        return { primary: pitches.length ? pitches[0] : null, pitches };
+    }
+
+    /** Parse comma-separated slope-adjusted areas (one per pitch face). */
+    function parseAreaList(raw) {
+        const s = String(raw ?? "").trim();
+        if (!s || !s.includes(",")) {
+            const n = toNumOrNull(s);
+            return { total: n, areas: null };
+        }
+        const areas = [];
+        for (const part of s.split(/[\s,]+/).map((p) => p.trim()).filter(Boolean)) {
+            const n = Number(part);
+            if (Number.isFinite(n) && n >= 0) areas.push(n);
+        }
+        if (!areas.length) return { total: null, areas: null };
+        return { total: areas.reduce((sum, n) => sum + n, 0), areas };
+    }
+
+    function mergePricingBreakdown(pricing) {
+        const b = pricing?.breakdown;
+        if (!b) return {};
+        if (b.pitched && b.flat) {
+            const p = b.pitched;
+            const f = b.flat;
+            return {
+                flatMembrane: Number(p.flatMembrane || 0) + Number(f.flatMembrane || 0),
+                flatBase: Number(p.flatBase || 0) + Number(f.flatBase || 0),
+                shingles: Number(p.shingles || 0) + Number(f.shingles || 0),
+                starter: Number(p.starter || 0) + Number(f.starter || 0),
+                ridgeCaps: Number(p.ridgeCaps || 0) + Number(f.ridgeCaps || 0),
+                underlayment: Number(p.underlayment || 0) + Number(f.underlayment || 0),
+                dripEdge: Number(p.dripEdge || 0) + Number(f.dripEdge || 0),
+                valley: Number(p.valley || 0) + Number(f.valley || 0),
+                nails: Number(p.nails || 0) + Number(f.nails || 0),
+                vents: Number(p.vents || 0) + Number(f.vents || 0),
+                flashing: Number(p.flashing || 0) + Number(f.flashing || 0)
+            };
+        }
+        return b;
+    }
+
+    function validateGeometryBeforeSubmit(payload) {
+        const roof = payload?.roof || {};
+        const lengths = payload?.lengths || {};
+        const errors = [];
+
+        const rt = roof.type || "pitched";
+        const area = Number(roof.area_sqft);
+        const pitch = Number(roof.pitch);
+        const lfKeys = ["ridge_lf", "hip_lf", "valley_lf", "eave_lf", "rake_lf"];
+
+        if (rt === "hybrid") {
+            const pa = Number(roof.pitched_area_sqft);
+            const fa = Number(roof.flat_area_sqft);
+            if (!Number.isFinite(pa) || pa <= 0) errors.push("Missing pitched section area.");
+            if (!Number.isFinite(fa) || fa <= 0) errors.push("Missing flat section area.");
+            if (!Number.isFinite(area) || area <= 0) errors.push("Missing total roof area.");
+        } else {
+            if (!Number.isFinite(area) || area <= 0) errors.push("Missing roof area.");
+        }
+
+        if (!Number.isFinite(pitch) || pitch < 0 || pitch > 24) {
+            errors.push("Enter a valid roof pitch (first value 0–24 rise per 12\" run), or comma-separated list.");
+        }
+
+        for (const k of lfKeys) {
+            const n = Number(lengths[k]);
+            if (!Number.isFinite(n) || n < 0) {
+                errors.push(`Missing ${k.replace("_lf", "").toUpperCase()} length.`);
+                break;
+            }
+        }
+        return errors;
+    }
+
+    function isGeometryReady(payload) {
+        return validateGeometryBeforeSubmit(payload).length === 0;
+    }
+
+    function updateActionState() {
+        const payload = collectPayload();
+        const ready = isGeometryReady(payload);
+        const customerMode = isCustomerMode();
+        // Keep button clickable so users always get feedback on click.
+        btnCalculate.disabled = false;
+        btnCalculate.title = ready
+            ? ""
+            : "System/imported roof measurements are required before calculation.";
+        btnCalculate.setAttribute("aria-description", ready ? "" : "Waiting for measurements");
+        measurementStateHint.classList.toggle("field-hidden", ready || !customerMode);
+        measurementStateHint.textContent = ready
+            ? ""
+            : "Awaiting roof measurements from admin settings profile or internal workflow.";
+    }
+
+    function applySystemMeasurements(measurements, sourceLabel = "", options = {}) {
+        if (!measurements || typeof measurements !== "object") return false;
+        const geometryOnly = options.geometryOnly === true;
+        const roof = measurements.roof && typeof measurements.roof === "object" ? measurements.roof : measurements;
+        const lengthsObj =
+            measurements.lengths && typeof measurements.lengths === "object"
+                ? measurements.lengths
+                : measurements;
+        const productObj =
+            measurements.product && typeof measurements.product === "object"
+                ? measurements.product
+                : measurements;
+
+        const areaVal = toNumOrNull(roof.area_sqft);
+        const pitchedVal = toNumOrNull(roof.pitched_area_sqft);
+        const flatVal = toNumOrNull(roof.flat_area_sqft);
+        const pitchVal = toNumOrNull(roof.pitch);
+        const ridgeVal = toNumOrNull(lengthsObj.ridge_lf);
+        const hipVal = toNumOrNull(lengthsObj.hip_lf);
+        const valleyVal = toNumOrNull(lengthsObj.valley_lf);
+        const eaveVal = toNumOrNull(lengthsObj.eave_lf);
+        const rakeVal = toNumOrNull(lengthsObj.rake_lf);
+        const flashingVal = toNumOrNull(lengthsObj.flashing_lf);
+        const apronFlashingVal = toNumOrNull(lengthsObj.apron_flashing_lf);
+
+        if (areaVal !== null) area.value = String(areaVal);
+        if (pitchedVal !== null) pitchedArea.value = String(pitchedVal);
+        if (flatVal !== null) flatArea.value = String(flatVal);
+        if (pitchVal !== null) pitch.value = String(pitchVal);
+        if (Array.isArray(roof.pitches) && roof.pitches.length > 1) {
+            pitch.value = roof.pitches.map((n) => String(n)).join(", ");
+        }
+        if (ridgeVal !== null) ridge.value = String(ridgeVal);
+        if (hipVal !== null) hip.value = String(hipVal);
+        if (valleyVal !== null) valley.value = String(valleyVal);
+        if (eaveVal !== null) eave.value = String(eaveVal);
+        if (rakeVal !== null) rake.value = String(rakeVal);
+        if (flashingVal !== null) flashing.value = String(flashingVal);
+        if (apronFlashingVal !== null) apronFlashing.value = String(apronFlashingVal);
+
+        if (!geometryOnly) {
+            if (typeof roof.type === "string" && ["pitched", "flat", "hybrid"].includes(roof.type)) {
+                roofType.value = roof.type;
+            } else if (pitchedVal !== null && flatVal !== null && pitchedVal > 0 && flatVal > 0) {
+                roofType.value = "hybrid";
+            } else if (flatVal !== null && flatVal > 0 && (pitchedVal === null || pitchedVal === 0)) {
+                roofType.value = "flat";
+            }
+            if (typeof roof.flat_system === "string" && roof.flat_system) {
+                flatSystem.value = roof.flat_system;
+            }
+            if (typeof roof.complexity === "string" && roof.complexity) {
+                complexity.value = roof.complexity;
+            }
+
+            if (typeof productObj.shingle_style === "string" && productObj.shingle_style) {
+                shingleStyle.value = productObj.shingle_style;
+            }
+            if (Array.isArray(productObj.manufacturers)) {
+                pendingManufacturerSelections = productObj.manufacturers.map((m) => String(m || "").trim()).filter(Boolean);
+                if (brandsLoaded) {
+                    const sel = new Set(pendingManufacturerSelections);
+                    Array.from(manufacturers.options).forEach((opt) => {
+                        opt.selected = sel.has(opt.value);
+                    });
+                    pendingManufacturerSelections = null;
+                }
+            }
+            if (typeof productObj.manufacturer_custom === "string") {
+                manufacturerCustom.value = productObj.manufacturer_custom;
+            }
+            if (Array.isArray(productObj.flat_products)) {
+                pendingFlatProductSelections = productObj.flat_products.map((k) => String(k || "").trim()).filter(Boolean);
+            }
+            const nailsEl = document.getElementById("includeRoofingNails");
+            const capsEl = document.getElementById("includePlasticCaps");
+            if (nailsEl && productObj.include_roofing_nails !== undefined) {
+                nailsEl.checked = productObj.include_roofing_nails !== false;
+            }
+            if (capsEl && productObj.include_plastic_caps !== undefined) {
+                capsEl.checked = productObj.include_plastic_caps !== false;
+            }
+            const customWasteVal = toNumOrNull(measurements.waste_custom_percent);
+            wasteCustomPercent.value = customWasteVal == null ? "" : String(customWasteVal);
+        }
+
+        toggleRoofTypeFields();
+        toggleManufacturerCustom();
+        updateActionState();
+        setMeasurementSourceLabel(sourceLabel || "Measurements loaded.");
+        return true;
+    }
+
+    let didHydrateSystemMeasurements = false;
+    function tryHydrateSystemMeasurements(options = {}) {
+        const force = options.force === true;
+        if (didHydrateSystemMeasurements && !force) return false;
+        const geometryOnly = isCustomerMode();
+        try {
+            if (window.__roofMeasurements) {
+                const ok = applySystemMeasurements(window.__roofMeasurements, "Measurements loaded from live app context.", {
+                    geometryOnly
+                });
+                if (ok) didHydrateSystemMeasurements = true;
+                return ok;
+            }
+            const s1 = sessionStorage.getItem("roof_measurements");
+            if (s1) {
+                const m = JSON.parse(s1);
+                const ok = applySystemMeasurements(m, "Measurements loaded from Dashboard handoff.", { geometryOnly });
+                if (ok) {
+                    didHydrateSystemMeasurements = true;
+                    return true;
+                }
+            }
+            const s2 = localStorage.getItem("roof_measurements");
+            if (s2) {
+                const m = JSON.parse(s2);
+                const ok = applySystemMeasurements(m, "Measurements loaded from saved local context.", { geometryOnly });
+                if (ok) {
+                    didHydrateSystemMeasurements = true;
+                    return true;
+                }
+            }
+        } catch {
+            // Ignore parsing errors from host-provided storage.
+        }
+        return false;
+    }
+
+    let didTryApiMeasurementProfile = false;
+    async function tryHydrateFromAdminProfile() {
+        if (didTryApiMeasurementProfile) return false;
+        didTryApiMeasurementProfile = true;
+        try {
+            const res = await fetch("/api/estimator/measurement-profile", { headers: { "Content-Type": "application/json" } });
+            if (!res.ok) return false;
+            const json = await res.json().catch(() => null);
+            const profile = json?.data?.profile;
+            if (profile && typeof profile === "object") {
+                return applySystemMeasurements(profile, "Measurements loaded from admin settings profile.", {
+                    geometryOnly: true
+                });
+            }
+        } catch {
+            // Ignore transient fetch errors; user can still use internal mode.
+        }
+        return false;
+    }
+
+    function toggleManufacturerCustom() {
+        const sel = Array.from(manufacturers.selectedOptions).map((o) => o.value);
+        manufacturerCustomWrap.classList.toggle("field-hidden", !sel.includes("Other"));
+    }
+
+    let loadedBrandOptions = [];
+    let brandsLoaded = false;
+    let pendingManufacturerSelections = null;
+    let pendingFlatProductSelections = null;
+    let cachedFlatProducts = [];
+
+    function flatProductSelectionKeys() {
+        const wrap = document.getElementById("flatProductsWrap");
+        const list = document.getElementById("flatProductsList");
+        if (!wrap || !list || wrap.classList.contains("field-hidden")) return undefined;
+        const inputs = list.querySelectorAll('input[type="checkbox"]');
+        if (!inputs.length) return undefined;
+        return Array.from(inputs)
+            .filter((el) => el.checked)
+            .map((el) => String(el.value || "").trim())
+            .filter(Boolean);
+    }
+
+    function renderFlatProductCheckboxes(products) {
+        const wrap = document.getElementById("flatProductsWrap");
+        const list = document.getElementById("flatProductsList");
+        if (!wrap || !list) return;
+        const preferred = new Set(
+            Array.isArray(pendingFlatProductSelections) && pendingFlatProductSelections.length
+                ? pendingFlatProductSelections
+                : products.map((p) => p.key)
+        );
+        pendingFlatProductSelections = null;
+        cachedFlatProducts = products.slice();
+        if (!products.length) {
+            list.innerHTML = `<p class="hint">No flat products configured for this system.</p>`;
+            return;
+        }
+        list.innerHTML = products
+            .map(
+                (p) => `
+                    <label class="checkbox-row">
+                        <input type="checkbox" value="${escapeHtml(p.key)}" ${preferred.has(p.key) ? "checked" : ""} />
+                        ${escapeHtml(p.brand)} — ${escapeHtml(p.product)}
+                    </label>
+                `
+            )
+            .join("");
+    }
+
+    async function loadFlatProducts() {
+        const wrap = document.getElementById("flatProductsWrap");
+        const list = document.getElementById("flatProductsList");
+        if (!wrap || !list) return;
+        const isFlat = roofType.value === "flat";
+        const isHybrid = roofType.value === "hybrid";
+        if (!isFlat && !isHybrid) {
+            wrap.classList.add("field-hidden");
+            return;
+        }
+        wrap.classList.remove("field-hidden");
+        const systemType = flatSystem.value || "tpo";
+        const brands = Array.from(manufacturers.selectedOptions)
+            .map((o) => o.value)
+            .filter((b) => b && b !== "Other");
+        const qs = new URLSearchParams({ systemType });
+        if (brands.length) qs.set("brands", brands.join(","));
+        list.innerHTML = `<p class="hint">Loading flat products…</p>`;
+        try {
+            const res = await fetch(`/api/estimator/flat-products?${qs.toString()}`, {
+                headers: { "Content-Type": "application/json" }
+            });
+            if (!res.ok) throw new Error("Failed to load flat products");
+            const json = await res.json().catch(() => null);
+            const products = Array.isArray(json?.data?.products) ? json.data.products : [];
+            renderFlatProductCheckboxes(products);
+        } catch {
+            list.innerHTML = `<p class="hint">Could not load flat products. Try again after selecting a system.</p>`;
+        }
+        updateActionState();
+    }
+
+    function toggleFastenersWrap() {
+        const wrap = document.getElementById("fastenersWrap");
+        if (!wrap) return;
+        const show = roofType.value === "pitched" || roofType.value === "hybrid";
+        wrap.classList.toggle("field-hidden", !show);
+    }
+
+    function populateManufacturerSelect(brands, preferredSelections) {
+        const preferredSource =
+            Array.isArray(preferredSelections) && preferredSelections.length
+                ? preferredSelections
+                : pendingManufacturerSelections;
+        const preferred = new Set(
+            Array.isArray(preferredSource) && preferredSource.length
+                ? preferredSource
+                : ["GAF", "Owens Corning"]
+        );
+        pendingManufacturerSelections = null;
+        manufacturers.innerHTML = "";
+        for (const brand of brands) {
+            const opt = document.createElement("option");
+            opt.value = brand;
+            opt.textContent = brand === "Other" ? "Other (specify)" : brand;
+            if (preferred.has(brand) && brand !== "Other") {
+                opt.selected = true;
+            }
+            manufacturers.appendChild(opt);
+        }
+        loadedBrandOptions = brands.slice();
+        brandsLoaded = true;
+        toggleManufacturerCustom();
+        void loadFlatProducts();
+    }
+
+    async function loadManufacturersFromDb(preferredSelections) {
+        const currentSelected = Array.from(manufacturers.selectedOptions)
+            .map((o) => o.value)
+            .filter(Boolean);
+        const preferred =
+            Array.isArray(preferredSelections) && preferredSelections.length
+                ? preferredSelections
+                : currentSelected.length
+                  ? currentSelected
+                  : pendingManufacturerSelections;
+        const qs = new URLSearchParams();
+        const rt = String(roofType?.value || "pitched");
+        qs.set("roofType", rt === "hybrid" ? "hybrid" : rt);
+        if ((rt === "flat" || rt === "hybrid") && flatSystem?.value) {
+            qs.set("systemType", flatSystem.value);
+        }
+        try {
+            const res = await fetch(`/api/estimator/brands?${qs.toString()}`, {
+                headers: { "Content-Type": "application/json" }
+            });
+            if (!res.ok) throw new Error("Failed to load brands");
+            const json = await res.json().catch(() => null);
+            const brands = Array.isArray(json?.data?.brands) ? json.data.brands : [];
+            if (!brands.length) {
+                manufacturers.innerHTML = `<option value="" disabled>No brands configured for this roof type</option>`;
+                brandsLoaded = true;
+                loadedBrandOptions = [];
+                updateActionState();
+                return;
+            }
+            populateManufacturerSelect(brands, preferred);
+        } catch {
+            populateManufacturerSelect(
+                ["GAF", "Owens Corning", "CertainTeed", "Atlas", "IKO", "Malarkey", "Tamko", "Other"],
+                preferred
+            );
+        }
+    }
+
+    function defaultPrimaryBrand() {
+        const firstSelected = Array.from(manufacturers.selectedOptions).find((o) => o.value && o.value !== "Other");
+        if (firstSelected) return firstSelected.value;
+        const firstListed = loadedBrandOptions.find((b) => b && b !== "Other");
+        return firstListed || "Other";
+    }
+    function toggleRoofTypeFields() {
+        const isFlat = roofType.value === "flat";
+        const isHybrid = roofType.value === "hybrid";
+        flatSystemWrap.classList.toggle("field-hidden", !(isFlat || isHybrid));
+        hybridAreaWrap.classList.toggle("field-hidden", !isHybrid);
+        toggleFastenersWrap();
+        void loadManufacturersFromDb();
+        void loadFlatProducts();
+        updateActionState();
+    }
+
+    function setGeometryLockState() {
+        const params = new URLSearchParams(window.location.search || "");
+        // v6 testing request: geometry is editable by default.
+        const manualGeometryEnabled = params.get("manualGeometry") !== "0";
+        const geometryIds = ["area", "pitchedArea", "flatArea", "pitch", "ridge", "hip", "valley", "eave", "rake", "flashing", "apronFlashing", "jobAddress", "pricingMarginPercent"];
+        for (const id of geometryIds) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            el.readOnly = !manualGeometryEnabled;
+            el.setAttribute("aria-readonly", String(!manualGeometryEnabled));
+        }
+        geometryFieldsWrap.classList.remove("field-hidden");
+        geometryLockHint.classList.toggle("field-hidden", manualGeometryEnabled);
+        if (manualGeometryEnabled) {
+            geometryLockHint.textContent = "Geometry edit mode enabled for testing.";
+        }
+        updateActionState();
+    }
+
+    function collectPayload() {
+        const selectedBrands = Array.from(manufacturers.selectedOptions).map((o) => o.value).slice(0, 4);
+        const primaryMfr = selectedBrands.find((b) => b !== "Other") || selectedBrands[0] || defaultPrimaryBrand();
+        const customRaw = String(wasteCustomPercent.value || "").trim();
+        const isHybrid = roofType.value === "hybrid";
+        const pitchedAreaParsed = parseAreaList(pitchedArea.value);
+        const areaParsed = parseAreaList(area.value);
+        const areaVal = areaParsed.total ?? toNumOrNull(area.value);
+        const pitchedAreaVal = pitchedAreaParsed.total ?? toNumOrNull(pitchedArea.value);
+        const flatAreaVal = toNumOrNull(flatArea.value);
+        const { primary: pitchVal, pitches: pitchList } = parsePitchInput(pitch.value);
+        const ridgeVal = toNumOrNull(ridge.value);
+        const hipVal = toNumOrNull(hip.value);
+        const valleyVal = toNumOrNull(valley.value);
+        const eaveVal = toNumOrNull(eave.value);
+        const rakeVal = toNumOrNull(rake.value);
+        const flashingVal = toNumOrNull(flashing.value);
+        const apronFlashingVal = toNumOrNull(apronFlashing.value);
+        const roofPayload = {
+            area_sqft: areaVal,
+            pitched_area_sqft: isHybrid ? pitchedAreaVal : null,
+            flat_area_sqft: isHybrid ? flatAreaVal : null,
+            area_input_type: "slope_adjusted",
+            pitch: pitchVal,
+            complexity: complexity.value,
+            type: roofType.value,
+            flat_system: (roofType.value === "flat" || isHybrid) ? (flatSystem.value || null) : null
+        };
+        if (pitchList.length > 1) roofPayload.pitches = pitchList;
+        const pitchAreas = isHybrid ? pitchedAreaParsed.areas : areaParsed.areas;
+        if (pitchAreas && pitchList.length === pitchAreas.length) {
+            roofPayload.pitch_area_sqft = pitchAreas;
+        }
+
+        const jobAddressEl = document.getElementById("jobAddress");
+        const marginPctEl = document.getElementById("pricingMarginPercent");
+        const jobAddressVal = jobAddressEl ? String(jobAddressEl.value || "").trim() : "";
+        const marginRaw = marginPctEl ? String(marginPctEl.value || "").trim() : "";
+        const nailsEl = document.getElementById("includeRoofingNails");
+        const capsEl = document.getElementById("includePlasticCaps");
+        const flatProducts = flatProductSelectionKeys();
+        const productPayload = {
+            shingle_style: shingleStyle.value,
+            manufacturer: primaryMfr,
+            manufacturers: selectedBrands.length ? selectedBrands : [defaultPrimaryBrand()],
+            manufacturer_custom: selectedBrands.includes("Other")
+                ? String(manufacturerCustom.value || "").trim()
+                : "",
+            include_roofing_nails: nailsEl ? nailsEl.checked : true,
+            include_plastic_caps: capsEl ? capsEl.checked : true
+        };
+        if (flatProducts !== undefined) {
+            productPayload.flat_products = flatProducts;
+        }
+
+        return {
+            roof: roofPayload,
+            lengths: {
+                ridge_lf: ridgeVal,
+                hip_lf: hipVal,
+                valley_lf: valleyVal,
+                eave_lf: eaveVal,
+                rake_lf: rakeVal,
+                flashing_lf: flashingVal,
+                apron_flashing_lf: apronFlashingVal
+            },
+            product: productPayload,
+            waste_suggested_percent: null,
+            waste_custom_percent: customRaw === "" ? null : Number(customRaw),
+            pricing_margin_percent: marginRaw === "" ? undefined : Number(marginRaw),
+            job: jobAddressVal ? { address: jobAddressVal } : undefined,
+            pricing_overrides: getSanitizedPricingOverrides()
+        };
+    }
+
+    function clearError() {
+        errorBanner.classList.remove("visible");
+        errorBanner.innerHTML = "";
+    }
+
+    function showError(message, details) {
+        let html = "<strong>Error.</strong> " + escapeHtml(message || "Something went wrong.");
+        if (details && details.length) {
+            html += "<ul>";
+            for (const d of details) {
+                html += "<li>" + escapeHtml(String(d)) + "</li>";
+            }
+            html += "</ul>";
+        }
+        errorBanner.innerHTML = html;
+        errorBanner.classList.add("visible");
+        if (typeof window.showToast === "function") {
+            window.showToast("error", message || "Something went wrong.");
+        }
+    }
+
+    function escapeHtml(s) {
+        return s
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    const resultSummary = document.getElementById("resultSummary");
+    resultSummary.addEventListener("click", async (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        if (!t.closest("#btnPricingCalculate") && !t.closest("#btnPricingRecalculate")) return;
+        e.preventDefault();
+        pricingTotalsRevealed = true;
+        const sec = document.getElementById("pricingMoneySection");
+        if (sec) sec.removeAttribute("hidden");
+        await recalculateWithPriceOverrides();
+    });
+    const jsonPanel = document.getElementById("jsonPanel");
+    const btnViewJson = document.getElementById("btnViewJson");
+    const resultModalBackdrop = document.getElementById("resultModalBackdrop");
+    const btnResultModalClose = document.getElementById("btnResultModalClose");
+    const btnModalPdf = document.getElementById("btnModalPdf");
+    const btnModalDocx = document.getElementById("btnModalDocx");
+    const btnModalXlsx = document.getElementById("btnModalXlsx");
+    const copyResultBtn = document.getElementById("copyResultBtn");
+
+    let lastJsonData = null;
+    let lastJsonText = "";
+    let pricingOverridesState = {};
+    let pricingTotalsRevealed = false;
+
+    function refreshMainWasteCustomDisplay() {
+        const el = document.getElementById("mainWasteCustom");
+        if (!el) return;
+        const raw = String(wasteCustomPercent.value || "").trim();
+        if (raw === "") {
+            el.textContent = "—";
+            return;
+        }
+        const n = Number(raw);
+        el.textContent = Number.isFinite(n) ? `${n.toFixed(2)}%` : "—";
+    }
+
+    function updateMainWasteSuggestedFromResult(data) {
+        const body = document.getElementById("mainWasteVisibilityBody");
+        if (!body) return;
+        const meta = data?.materials?.meta || {};
+        const isMixed = meta.roofType === "mixed";
+        const customPct = meta.wasteCustomFactor;
+        const customStr = customPct == null ? "—" : `${(Number(customPct) * 100).toFixed(2)}%`;
+
+        if (isMixed) {
+            const p = data.materials?.pitched?.meta?.suggestedWasteFactor;
+            const f = data.materials?.flat?.meta?.suggestedWasteFactor;
+            const pStr = p != null ? `${(Number(p) * 100).toFixed(2)}%` : "—";
+            const fStr = f != null ? `${(Number(f) * 100).toFixed(2)}%` : "—";
+            body.innerHTML = `
+                <tr><td>Suggested waste — pitched</td><td>${escapeHtml(pStr)}</td></tr>
+                <tr><td>Suggested waste — flat</td><td>${escapeHtml(fStr)}</td></tr>
+                <tr><td>Custom waste override (if any)</td><td id="mainWasteCustom">${escapeHtml(customStr)}</td></tr>
+            `;
+            return;
+        }
+        const wf =
+            data.materials?.pitched?.meta?.suggestedWasteFactor ??
+            data.materials?.flat?.meta?.suggestedWasteFactor ??
+            meta.suggestedWasteFactor ??
+            meta.wasteFactor;
+        const wfStr = wf != null ? `${(Number(wf) * 100).toFixed(2)}%` : "—";
+        body.innerHTML = `
+            <tr><td>Suggested waste (model)</td><td id="mainWasteSuggested">${escapeHtml(wfStr)}</td></tr>
+            <tr><td>Custom waste override (if any)</td><td id="mainWasteCustom">${escapeHtml(customStr)}</td></tr>
+        `;
+    }
+
+    const PRICE_OVERRIDE_KEYS = [
+        "flat_membrane_roll",
+        "flat_base_roll",
+        "shingles_bundle",
+        "starter_bundle",
+        "ridge_bundle",
+        "underlayment_roll",
+        "drip_edge_piece",
+        "valley_roll",
+        "nail_unit",
+        "vent_unit",
+        "flashing_piece",
+        "sealant_tube"
+    ];
+
+    function getSanitizedPricingOverrides() {
+        const out = {};
+        for (const [k, raw] of Object.entries(pricingOverridesState || {})) {
+            if (!PRICE_OVERRIDE_KEYS.includes(k)) continue;
+            const n = Number(raw);
+            if (Number.isFinite(n) && n >= 0) out[k] = n;
+        }
+        return out;
+    }
+
+    function fmt(n, digits = 2) {
+        if (n === undefined || n === null || n === "") return "—";
+        const num = Number(n);
+        if (!Number.isFinite(num)) return "—";
+        // Prefer integers when possible
+        const isInt = Math.abs(num - Math.round(num)) < 1e-9;
+        return isInt ? String(Math.round(num)) : num.toFixed(digits);
+    }
+
+    function fmtMoney(n) {
+        const num = Number(n);
+        if (!Number.isFinite(num)) return "—";
+        return "$" + num.toFixed(2);
+    }
+
+    function renderResultSummary(data) {
+        if (!data) return;
+        const materials = data.materials || {};
+        const pricing = data.pricing || {};
+        const input = data.input || {};
+        const meta = materials.meta || {};
+
+        const pitchPrimary = input.roof?.pitch ?? meta.pitch ?? "—";
+        const pitchList = input.roof?.pitches;
+        const pitchDisplay =
+            Array.isArray(pitchList) && pitchList.length > 1
+                ? pitchList.map((p) => fmt(p, 1)).join(", ")
+                : fmt(pitchPrimary, 1);
+        const surfaceArea = meta.surfaceArea ?? materials.shingles?.surfaceArea ?? "—";
+        const wasteFactorMeta = meta.wasteFactor;
+
+        const shingles = materials.shingles || {};
+        const starter = materials.starter || {};
+        const ridgeCaps = materials.ridgeCaps || {};
+        const underlayment = materials.underlayment || {};
+        const dripEdge = materials.dripEdge || {};
+        const valley = materials.valley || {};
+        const nails = materials.nails || {};
+        const vents = materials.vents || {};
+        const flashing = materials.flashing || {};
+
+        const breakdown = mergePricingBreakdown(pricing);
+
+        function unitPerQty(qty, dollars) {
+            const q = Number(qty);
+            const d = Number(dollars);
+            if (!Number.isFinite(q) || q <= 0 || !Number.isFinite(d)) return "—";
+            return fmtMoney(d / q);
+        }
+
+        const recommendationRows =
+            meta.roofType === "mixed"
+                ? [...(materials.recommendations?.pitched || []), ...(materials.recommendations?.flat || [])]
+                : (meta.roofType === "flat" ? materials.recommendations?.flat : materials.recommendations?.pitched) || [];
+        const rows = recommendationRows.length
+            ? recommendationRows.map((r) => ({
+                name: `${r.brand} - ${r.product}`,
+                qty: r.qty,
+                unit: r.unit,
+                extra: `${r.section} · ${r.coverageBasis}`,
+                bd: null
+            }))
+            : [
+                { name: "Shingles", qty: shingles.bundles, unit: "bundles", extra: shingles.squares ? `${fmt(shingles.squares)} squares` : null, bd: "shingles" },
+                { name: "Starter", qty: starter.bundles, unit: "bundles", extra: starter.lf ? `${fmt(starter.lf, 1)} LF` : null, bd: "starter" },
+                { name: "Ridge caps", qty: ridgeCaps.bundles, unit: "bundles", extra: ridgeCaps.lf ? `${fmt(ridgeCaps.lf, 1)} LF` : null, bd: "ridgeCaps" },
+                { name: "Underlayment", qty: underlayment.rolls, unit: "rolls", extra: null, bd: "underlayment" },
+                { name: "Drip edge", qty: dripEdge.pieces, unit: "pieces", extra: dripEdge.lf ? `${fmt(dripEdge.lf, 1)} LF` : null, bd: "dripEdge" },
+                { name: "Valley", qty: valley.rolls, unit: "rolls", extra: valley.lf ? `${fmt(valley.lf, 1)} LF` : null, bd: "valley" },
+                { name: "Nails", qty: nails.count, unit: "count", extra: null, bd: "nails" },
+                { name: "Vents", qty: vents.units, unit: "units", extra: null, bd: "vents" },
+                { name: "Flashing", qty: flashing.pieces, unit: "pieces", extra: flashing.lf ? `${fmt(flashing.lf, 1)} LF` : null, bd: "flashing" }
+            ];
+
+        const materialsHtml = rows
+            .map((r) => {
+                const extra = r.extra ? `<div class="result-row-extra">${escapeHtml(r.extra)}</div>` : "";
+                const unitPriceCell = r.bd ? unitPerQty(r.qty, breakdown[r.bd]) : "—";
+                return `<tr>
+                    <td class="result-table-item">${escapeHtml(r.name)}</td>
+                    <td class="result-table-qty">${escapeHtml(fmt(r.qty, 2))}</td>
+                    <td class="result-table-unit">${escapeHtml(r.unit)}</td>
+                    <td class="result-table-unit">${escapeHtml(unitPriceCell)}</td>
+                    <td>${extra}</td>
+                </tr>`;
+            })
+            .join("");
+
+        const pricingLines = [
+            ["Flat membrane (rolls)", breakdown.flatMembrane],
+            ["Flat base / accessory rolls", breakdown.flatBase],
+            ["Shingles", breakdown.shingles],
+            ["Starter", breakdown.starter],
+            ["Ridge caps", breakdown.ridgeCaps],
+            ["Underlayment", breakdown.underlayment],
+            ["Drip edge", breakdown.dripEdge],
+            ["Valley", breakdown.valley],
+            ["Nails", breakdown.nails],
+            ["Vents", breakdown.vents],
+            ["Flashing", breakdown.flashing]
+        ];
+
+        const pricingHtml = pricingLines
+            .filter(([, v]) => Number.isFinite(Number(v)))
+            .map(([label, val]) => `<tr><td>${escapeHtml(label)}</td><td class="result-money-td">${fmtMoney(val)}</td></tr>`)
+            .join("");
+
+        const total = pricing.total;
+        const subtotal = pricing.subtotal;
+        const marginAmount = pricing.marginAmount;
+        const marginPercent = pricing.marginPercent;
+        const pitchedSuggestedPct = data.materials?.pitched?.meta?.suggestedWasteFactor;
+        const flatSuggestedPct = data.materials?.flat?.meta?.suggestedWasteFactor;
+        const isMixed = data.materials?.meta?.roofType === "mixed";
+
+        let suggestedKpiHtml = "—";
+        if (isMixed) {
+            const pStr =
+                pitchedSuggestedPct != null ? `${(Number(pitchedSuggestedPct) * 100).toFixed(2)}%` : "—";
+            const fStr = flatSuggestedPct != null ? `${(Number(flatSuggestedPct) * 100).toFixed(2)}%` : "—";
+            suggestedKpiHtml = `Pitched ${escapeHtml(pStr)} · Flat ${escapeHtml(fStr)}`;
+        } else {
+            const w = pitchedSuggestedPct ?? flatSuggestedPct ?? meta.suggestedWasteFactor ?? wasteFactorMeta;
+            suggestedKpiHtml =
+                w != null ? escapeHtml(`${(Number(w) * 100).toFixed(2)}%`) : "—";
+        }
+
+        const totalsHiddenAttr = pricingTotalsRevealed ? "" : ' hidden=""';
+
+        resultSummary.innerHTML = `
+            <div class="result-summary-grid">
+                <div class="result-kpi-grid result-kpi-grid--three">
+                    <div class="result-kpi">
+                        <span class="hint">Pitch (recorded)</span>
+                        <div class="result-kpi-value">${escapeHtml(String(pitchDisplay))}</div>
+                        <div class="result-kpi-unit">rise / 12 in run · first value used in math</div>
+                    </div>
+                    <div class="result-kpi">
+                        <span class="hint">Surface area</span>
+                        <div class="result-kpi-value">${escapeHtml(String(fmt(surfaceArea)))}</div>
+                        <div class="result-kpi-unit">sq ft (slope-adjusted input)</div>
+                    </div>
+                    <div class="result-kpi">
+                        <span class="hint">Suggested waste (model)</span>
+                        <div class="result-kpi-value">${suggestedKpiHtml}</div>
+                        <div class="result-kpi-unit">percent in material qty (not an extra area multiplier)</div>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-title">Materials quantities</div>
+                    <table class="result-material-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th>Unit price</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${materialsHtml}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="result-section result-pricing">
+                    <div class="result-section-title">Pricing</div>
+                    <div class="hint" style="margin-bottom:8px;">Line pricing uses catalog defaults from Settings until you enter unit prices below (@0% waste basis).</div>
+                    <div id="priceOverrideEditor"></div>
+                    <div class="pricing-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;">
+                        <button type="button" class="secondary" id="btnPricingCalculate"><i class="fa-solid fa-dollar-sign" aria-hidden="true"></i>Calculate prices</button>
+                        <button type="button" class="tertiary" id="btnPricingRecalculate"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>Recalculate</button>
+                    </div>
+                    <div class="hint" style="margin-bottom:8px;">Unit price fields are <strong>editable</strong>. Use Calculate prices to reveal dollar totals; use Recalculate after changing unit prices.</div>
+                    <div id="pricingMoneySection"${totalsHiddenAttr}>
+                        <table class="result-breakdown-table">
+                            <tbody>
+                                ${pricingHtml || `<tr><td colspan="2" class="hint">No pricing breakdown.</td></tr>`}
+                            </tbody>
+                        </table>
+                        <div class="result-pricing-total" style="margin-top:14px;">
+                            <div class="hint">Subtotal</div>
+                            <div class="result-pricing-subhint">${escapeHtml(fmtMoney(subtotal))} &nbsp;·&nbsp; Margin ${escapeHtml(fmtMoney(marginAmount))} (${escapeHtml(String(marginPercent))}%)</div>
+                            <div class="hint" style="margin-top:10px;">Total</div>
+                            <div class="result-pricing-total-val">${escapeHtml(fmtMoney(total))}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        renderPriceOverrideEditor(data);
+    }
+
+    function renderPriceOverrideEditor(data) {
+        const mount = document.getElementById("priceOverrideEditor");
+        if (!mount) return;
+        const materials = data?.materials || {};
+        const pricing = data?.pricing || {};
+        const lines = [
+            ["flat_membrane_roll", "Flat membrane / roll", "flatMembrane"],
+            ["flat_base_roll", "Flat base / underlayment (per roll)", "flatBase"],
+            ["shingles_bundle", "Shingles / bundle", "shingles"],
+            ["starter_bundle", "Starter / bundle", "starter"],
+            ["ridge_bundle", "Ridge caps / bundle", "ridgeCaps"],
+            ["underlayment_roll", "Underlayment / roll", "underlayment"],
+            ["drip_edge_piece", "Drip edge / piece", "dripEdge"],
+            ["valley_roll", "Valley / roll", "valley"],
+            ["nail_unit", "Nails / unit", "nails"],
+            ["vent_unit", "Vents / unit", "vents"],
+            ["flashing_piece", "Flashing / piece", "flashing"]
+        ];
+        const b = mergePricingBreakdown(pricing);
+        const sumQty = (a, c) => Number(a || 0) + Number(c || 0);
+        const qtyByBreakdown = {
+            shingles: sumQty(materials?.pitched?.shingles?.bundles, materials?.flat?.shingles?.bundles) || Number(materials?.shingles?.bundles || 0),
+            starter: sumQty(materials?.pitched?.starter?.bundles, materials?.flat?.starter?.bundles) || Number(materials?.starter?.bundles || 0),
+            ridgeCaps: sumQty(materials?.pitched?.ridgeCaps?.bundles, materials?.flat?.ridgeCaps?.bundles) || Number(materials?.ridgeCaps?.bundles || 0),
+            underlayment: sumQty(materials?.pitched?.underlayment?.rolls, materials?.flat?.underlayment?.rolls) || Number(materials?.underlayment?.rolls || 0),
+            dripEdge: sumQty(materials?.pitched?.dripEdge?.pieces, materials?.flat?.dripEdge?.pieces) || Number(materials?.dripEdge?.pieces || 0),
+            valley: sumQty(materials?.pitched?.valley?.rolls, materials?.flat?.valley?.rolls) || Number(materials?.valley?.rolls || 0),
+            nails: sumQty(materials?.pitched?.nails?.count, materials?.flat?.nails?.count) || Number(materials?.nails?.count || 0),
+            vents: sumQty(materials?.pitched?.vents?.units, materials?.flat?.vents?.units) || Number(materials?.vents?.units || 0),
+            flashing: sumQty(materials?.pitched?.flashing?.pieces, materials?.flat?.flashing?.pieces) || Number(materials?.flashing?.pieces || 0),
+            flatMembrane: (() => {
+                const flatRecs = materials?.recommendations?.flat || materials?.flat?.recommendations || [];
+                return flatRecs
+                    .filter((r) => r?.componentType === "membrane")
+                    .reduce((s, r) => s + (Number(r?.qty) || 0), 0);
+            })(),
+            flatBase: (() => {
+                const flatRecs = materials?.recommendations?.flat || materials?.flat?.recommendations || [];
+                return flatRecs
+                    .filter((r) => r?.componentType === "base" || r?.componentType === "underlayment")
+                    .reduce((s, r) => s + (Number(r?.qty) || 0), 0);
+            })()
+        };
+        const htmlRows = lines.map(([key, label, breakdownKey]) => {
+            const current = pricingOverridesState[key];
+            const qty = Number(qtyByBreakdown[breakdownKey] || 0);
+            const lineTotal = Number(b?.[breakdownKey]);
+            const inferredUnit =
+                Number.isFinite(lineTotal) && Number.isFinite(qty) && qty > 0
+                    ? Number((lineTotal / qty).toFixed(2))
+                    : "";
+            const unit = Number.isFinite(Number(current)) ? Number(current) : inferredUnit;
+            if (!Number.isFinite(lineTotal) && (!Number.isFinite(qty) || qty <= 0)) return "";
+            return `<tr>
+                <td>${escapeHtml(label)}</td>
+                <td><input data-price-key="${escapeHtml(key)}" type="number" min="0" step="0.01" value="${unit === "" ? "" : escapeHtml(String(unit))}" placeholder="Use default" /></td>
+                <td>${Number.isFinite(lineTotal) ? escapeHtml(fmtMoney(lineTotal)) : "—"}</td>
+            </tr>`;
+        }).filter(Boolean).join("");
+        mount.innerHTML = `
+            <div class="result-section-title">Adjust unit prices (@0%)</div>
+            <table class="result-breakdown-table">
+                <thead><tr><th>Line item</th><th>Unit price (editable)</th><th>Line total</th></tr></thead>
+                <tbody>${htmlRows}</tbody>
+            </table>
+        `;
+        mount.querySelectorAll("input[data-price-key]").forEach((inputEl) => {
+            inputEl.addEventListener("input", (e) => {
+                const key = e.target.getAttribute("data-price-key");
+                const raw = String(e.target.value || "").trim();
+                if (raw === "") {
+                    delete pricingOverridesState[key];
+                    return;
+                }
+                const n = Number(raw);
+                if (!Number.isFinite(n) || n < 0) return;
+                pricingOverridesState[key] = n;
+            });
+        });
+    }
+
+    async function recalculateWithPriceOverrides() {
+        const payload = collectPayload();
+        let res;
+        try {
+            res = await fetch("/api/calculate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch {
+            return;
+        }
+        if (!res.ok) return;
+        const json = await parseJsonResponse(res);
+        if (!json || json.success !== true || !json.data) return;
+        lastJsonData = json.data;
+        lastJsonText = JSON.stringify(json.data, null, 2);
+        updateMainWasteSuggestedFromResult(json.data);
+        renderResultSummary(json.data);
+        result.textContent = lastJsonText;
+    }
+
+    if (btnViewJson) {
+        btnViewJson.addEventListener("click", () => {
+            const willShow = jsonPanel.hidden;
+            jsonPanel.hidden = !jsonPanel.hidden;
+            if (willShow) {
+                // Keep scroll inside modal content, not the page.
+                jsonPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        });
+    }
+
+    function openResultModal() {
+        resultModalBackdrop.classList.add("open");
+        resultModalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeResultModal() {
+        resultModalBackdrop.classList.remove("open");
+        resultModalBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    btnResultModalClose.addEventListener("click", closeResultModal);
+    resultModalBackdrop.addEventListener("click", (e) => {
+        if (e.target === resultModalBackdrop) closeResultModal();
+    });
+
+    btnModalPdf.addEventListener("click", () => downloadExport("pdf"));
+    btnModalDocx.addEventListener("click", () => downloadExport("docx"));
+    btnModalXlsx.addEventListener("click", () => downloadExport("xlsx"));
+    copyResultBtn.addEventListener("click", copyResult);
+
+    async function parseJsonResponse(res) {
+        const text = await res.text();
+        try {
+            return JSON.parse(text);
+        } catch {
+            return null;
+        }
+    }
+
+    async function calculate() {
+        clearError();
+        copyResultBtn.hidden = true;
+        btnViewJson.hidden = true;
+        resultSummary.innerHTML = "";
+        jsonPanel.hidden = true;
+        result.textContent = "";
+        pricingOverridesState = {};
+        pricingTotalsRevealed = false;
+
+        const payload = collectPayload();
+        const geometryErrors = validateGeometryBeforeSubmit(payload);
+        if (geometryErrors.length) {
+            await tryHydrateFromAdminProfile();
+            tryHydrateSystemMeasurements({ force: true });
+            updateActionState();
+            if (isCustomerMode() && typeof window.showToast === "function") {
+                window.showToast("info", "Load measurements from admin settings profile or internal workflow.");
+            }
+            return;
+        }
+
+        let res;
+        try {
+            res = await fetch("/api/calculate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch (e) {
+            showError("Network error. Is the server running?", [String(e.message || e)]);
+            return;
+        }
+
+        const ct = res.headers.get("Content-Type") || "";
+        const json = ct.includes("application/json") ? await parseJsonResponse(res) : null;
+
+        if (!res.ok) {
+            const msg = json?.error?.message || res.statusText || "Request failed";
+            const details = json?.error?.details;
+            showError(msg, Array.isArray(details) ? details : undefined);
+            return;
+        }
+
+        if (!json || json.success !== true || !json.data) {
+            showError(json?.error?.message || "Unexpected response from server.");
+            return;
+        }
+
+        lastJsonData = json.data;
+        lastJsonText = JSON.stringify(json.data, null, 2);
+        updateMainWasteSuggestedFromResult(json.data);
+        refreshMainWasteCustomDisplay();
+
+        // Show contractor-friendly summary
+        renderResultSummary(json.data);
+
+        // Keep technical JSON available via the JSON panel
+        result.textContent = lastJsonText;
+        copyResultBtn.hidden = false;
+        btnViewJson.hidden = false;
+        openResultModal();
+        if (typeof window.showToast === "function") {
+            window.showToast("success", "Estimate calculated.");
+        }
+    }
+
+    async function copyResult() {
+        const text = lastJsonText || result.textContent.trim();
+        if (!text) {
+            copyResultBtn.hidden = true;
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            showError("Could not copy to clipboard (browser permission).");
+            return;
+        }
+        const label = copyResultBtn.querySelector(".sr-only") || copyResultBtn.querySelector("span");
+        const oldText = label ? label.textContent : "";
+        if (label) label.textContent = "Copied!";
+        if (typeof window.showToast === "function") {
+            window.showToast("success", "Result copied.");
+        }
+        setTimeout(() => {
+            if (label) label.textContent = oldText;
+        }, 1200);
+    }
+
+    const now = new Date();
+
+    const exportUrls = {
+        pdf: "/api/proposal",
+        docx: "/api/proposal/docx",
+        xlsx: "/api/proposal/xlsx"
+    };
+
+    const exportNames = {
+        pdf: `roof-material-estimate${now.toISOString()}.pdf`,
+        docx: `roof-material-estimate${now.toISOString()}.docx`,
+        xlsx: `roofing-material-order${now.toISOString()}.xlsx`
+    };
+
+    async function downloadExport(format) {
+        clearError();
+        const payload = collectPayload();
+        const geometryErrors = validateGeometryBeforeSubmit(payload);
+        if (geometryErrors.length) {
+            await tryHydrateFromAdminProfile();
+            tryHydrateSystemMeasurements({ force: true });
+            updateActionState();
+            if (isCustomerMode() && typeof window.showToast === "function") {
+                window.showToast("info", "Load measurements from admin settings profile or internal workflow before export.");
+            }
+            return;
+        }
+        let res;
+        try {
+            res = await fetch(exportUrls[format], {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch (e) {
+            showError("Network error during download.", [String(e.message || e)]);
+            return;
+        }
+
+        const ct = res.headers.get("Content-Type") || "";
+
+        if (!res.ok) {
+            if (ct.includes("application/json")) {
+                const json = await parseJsonResponse(res);
+                const msg = json?.error?.message || "Export failed";
+                const details = json?.error?.details;
+                showError(msg, Array.isArray(details) ? details : undefined);
+            } else {
+                showError("Export failed.", ["HTTP " + res.status]);
+            }
+            return;
+        }
+
+        if (ct.includes("application/json")) {
+            const json = await parseJsonResponse(res);
+            showError(json?.error?.message || "Server returned JSON instead of a file.");
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = exportNames[format] || "download.bin";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        if (typeof window.showToast === "function") {
+            const label = format === "pdf" ? "PDF" : format === "docx" ? "Word" : "Excel";
+            window.showToast("success", label + " downloaded.");
+        }
+    }
+
+    async function initEstimatorPage() {
+        await loadManufacturersFromDb();
+        if (isCustomerMode()) {
+            await tryHydrateFromAdminProfile();
+            tryHydrateSystemMeasurements();
+        } else {
+            tryHydrateSystemMeasurements();
+        }
+        toggleRoofTypeFields();
+        toggleFastenersWrap();
+        setGeometryLockState();
+        updateActionState();
+        refreshMainWasteCustomDisplay();
+    }
+
+    manufacturers.addEventListener("change", () => {
+        toggleManufacturerCustom();
+        void loadFlatProducts();
+    });
+    flatSystem.addEventListener("change", () => {
+        void loadManufacturersFromDb();
+        void loadFlatProducts();
+    });
+    const flatProductsList = document.getElementById("flatProductsList");
+    if (flatProductsList) {
+        flatProductsList.addEventListener("change", updateActionState);
+    }
+    const includeRoofingNailsEl = document.getElementById("includeRoofingNails");
+    const includePlasticCapsEl = document.getElementById("includePlasticCaps");
+    if (includeRoofingNailsEl) includeRoofingNailsEl.addEventListener("change", updateActionState);
+    if (includePlasticCapsEl) includePlasticCapsEl.addEventListener("change", updateActionState);
+
+    [area, pitchedArea, flatArea, pitch, ridge, hip, valley, eave, rake, flashing, apronFlashing, roofType, wasteCustomPercent].forEach((el) => {
+        if (!el) return;
+        el.addEventListener("input", updateActionState);
+        el.addEventListener("change", updateActionState);
+    });
+    wasteCustomPercent.addEventListener("input", refreshMainWasteCustomDisplay);
+    wasteCustomPercent.addEventListener("change", refreshMainWasteCustomDisplay);
+    void initEstimatorPage();
+</script>
+<script src="/js/nav-auth.js" defer></script>
+
+</body>
+</html>
